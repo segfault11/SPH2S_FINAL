@@ -1,0 +1,110 @@
+﻿Build started 5/7/2013 11:27:54 PM.
+     1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWOSCALE\SPH2S_FINAL_TWOSCALE.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Release\SPH2S_FINAL_SINGLE_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       AddCudaCompileDeps:
+       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
+       AddCudaCompilePropsDeps:
+         Found "CudaToolkitCustomDir".
+         Found "AdditionalDeps".
+         Found "CompileOut".
+         Found "Include".
+         Found "UseHostInclude".
+         Found "Keep".
+         Found "KeepDir".
+         Found "GenerateRelocatableDeviceCode".
+         Found "NvccCompilation".
+         Found "NvccPath".
+         Found "RequiredIncludes".
+         Found "TargetMachinePlatform".
+         Found "CInterleavedPTX".
+         Found "CodeGeneration".
+         Found "GPUDebugInfo".
+         Found "GenerateLineInfo".
+         Found "MaxRegCount".
+         Found "PtxAsOptionV".
+         Found "AdditionalCompilerOptions".
+         Found "Defines".
+         Found "UseHostDefines".
+         Found "Emulation".
+         Found "HostDebugInfo".
+         Found "FastMath".
+         Found "Optimization".
+         Found "Runtime".
+         Found "RuntimeChecks".
+         Found "TypeInfo".
+         Found "Warning".
+         Found "AdditionalOptions".
+         Found "CommandLineTemplate".
+         Found "PerformDeviceLink".
+         Found "LinkOut".
+         Found "AdditionalLibraryDirectories".
+         Found "UseHostLibraryDirectories".
+         Found "AdditionalDependencies".
+         Found "UseHostLibraryDependencies".
+         Found "GPUDebugInfo".
+         Found "Optimization".
+         Found "CodeGeneration".
+         Found "TargetMachinePlatform".
+         Found "Warning".
+         Found "RuntimeChecks".
+         Found "Runtime".
+         Found "TypeInfo".
+         Found "AdditionalCompilerOptions".
+         Found "Inputs".
+         Found "AdditionalOptions".
+         Found "CommandLineTemplate".
+       CudaBuild:
+       Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
+       ClCompile:
+         All outputs are up-to-date.
+       ManifestResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Release\SPH2S_FINAL_SINGLE_SCALE.exe.embed.manifest.res" Release\SPH2S_FINAL_SINGLE_SCALE_manifest.rc 
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\lib\Win32" glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\SPH2S_FINAL_SINGLE_SCALE.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.lib" /MACHINE:X86 Release\Solver.cu.obj
+         Release\SPH2S_FINAL_SINGLE_SCALE.exe.embed.manifest.res
+         Release\BoxRenderer.obj
+         Release\cuda.obj
+         Release\main.obj
+         Release\Camera.obj
+         Release\OpenGL.obj
+         Release\Vector3f.obj
+         Release\ParticleData.obj
+         Release\Renderer.obj
+     1>LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
+         Generating code
+         Finished generating code
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Release\SPH2S_FINAL_SINGLE_SCALE.exe.embed.manifest" /manifest Release\SPH2S_FINAL_SINGLE_SCALE.exe.intermediate.manifest
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Release\SPH2S_FINAL_SINGLE_SCALE.exe.embed.manifest.res" Release\SPH2S_FINAL_SINGLE_SCALE_manifest.rc 
+       LinkEmbedManifest:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\lib\Win32" glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\SPH2S_FINAL_SINGLE_SCALE.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.lib" /MACHINE:X86 Release\Solver.cu.obj
+         Release\SPH2S_FINAL_SINGLE_SCALE.exe.embed.manifest.res
+         Release\BoxRenderer.obj
+         Release\cuda.obj
+         Release\main.obj
+         Release\Camera.obj
+         Release\OpenGL.obj
+         Release\Vector3f.obj
+         Release\ParticleData.obj
+         Release\Renderer.obj
+     1>LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
+         Generating code
+         Finished generating code
+         SPH2S_FINAL_TWOSCALE.vcxproj -> C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_SINGLE_SCALE.exe
+       PostBuildEvent:
+         echo copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\cudart*.dll" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\"
+         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\cudart*.dll" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\"
+         :VCEnd
+         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\cudart*.dll" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\"
+         C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\cudart32_50_35.dll
+         C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\cudart64_50_35.dll
+                 2 file(s) copied.
+       FinalizeBuildStatus:
+         Deleting file "Release\SPH2S_FINAL_SINGLE_SCALE.unsuccessfulbuild".
+         Touching "Release\SPH2S_FINAL_SINGLE_SCALE.lastbuildstate".
+     1>Done Building Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWOSCALE\SPH2S_FINAL_TWOSCALE.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.20

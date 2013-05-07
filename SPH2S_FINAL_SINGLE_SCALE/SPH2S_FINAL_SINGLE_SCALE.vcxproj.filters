@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="CUDA">
+      <UniqueIdentifier>{1d4d8ed2-e98a-49dd-8a5a-9da05d29bb54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenGL">
+      <UniqueIdentifier>{79e792ae-adcd-4b04-87ad-59742cf17584}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ParticleData">
+      <UniqueIdentifier>{fd6eb860-99a7-41a5-80f1-0a0cc6903c7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{aad80669-06a7-4904-93b3-3d133a312abb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solver">
+      <UniqueIdentifier>{2f1bda73-41cc-424f-9320-3dda30fa86a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{fb39f961-6e6e-48c6-9b75-96e58aa1bbf8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Renderer">
+      <UniqueIdentifier>{6d9f568b-d765-4cbf-9908-4c0ec944dd85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\BoxRenderer">
+      <UniqueIdentifier>{d41aef25-0b5d-4feb-8833-3e349090a74f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cuda.cpp">
+      <Filter>CUDA</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL\Camera.cpp">
+      <Filter>OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL\OpenGL.cpp">
+      <Filter>OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL\Vector3f.cpp">
+      <Filter>OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleData.cpp">
+      <Filter>ParticleData</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Renderer\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="BoxRenderer.cpp">
+      <Filter>Renderer\BoxRenderer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cuda.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGL\Camera.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGL\OpenGL.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGL\Vector3f.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleData.h">
+      <Filter>ParticleData</Filter>
+    </ClInclude>
+    <ClInclude Include="Solver.h">
+      <Filter>Solver</Filter>
+    </ClInclude>
+    <ClInclude Include="Grid.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Renderer\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxRenderer.h">
+      <Filter>Renderer\BoxRenderer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RendererVertex.glsl">
+      <Filter>Renderer\Renderer</Filter>
+    </None>
+    <None Include="RendererFragment.glsl">
+      <Filter>Renderer\Renderer</Filter>
+    </None>
+    <None Include="RendererGeometry.glsl">
+      <Filter>Renderer\Renderer</Filter>
+    </None>
+    <None Include="BoxRendererFragment.glsl">
+      <Filter>Renderer\BoxRenderer</Filter>
+    </None>
+    <None Include="BoxRendererVertex.glsl">
+      <Filter>Renderer\BoxRenderer</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="Solver.cu">
+      <Filter>Solver</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>
