@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SPH2S_FINAL", "SPH2S_FINAL\SPH2S_FINAL.vcxproj", "{1877DE32-61B4-4B7E-975C-ECBAF1A4C378}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SPH2S_FINAL_TWOSCALE", "SPH2S_FINAL_TWOSCALE\SPH2S_FINAL_TWOSCALE.vcxproj", "{73018CB8-CC23-49EE-BAF7-CE5E5306152E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -13,6 +15,10 @@ Global
 		{1877DE32-61B4-4B7E-975C-ECBAF1A4C378}.Debug|Win32.Build.0 = Debug|Win32
 		{1877DE32-61B4-4B7E-975C-ECBAF1A4C378}.Release|Win32.ActiveCfg = Release|Win32
 		{1877DE32-61B4-4B7E-975C-ECBAF1A4C378}.Release|Win32.Build.0 = Release|Win32
+		{73018CB8-CC23-49EE-BAF7-CE5E5306152E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{73018CB8-CC23-49EE-BAF7-CE5E5306152E}.Debug|Win32.Build.0 = Debug|Win32
+		{73018CB8-CC23-49EE-BAF7-CE5E5306152E}.Release|Win32.ActiveCfg = Release|Win32
+		{73018CB8-CC23-49EE-BAF7-CE5E5306152E}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

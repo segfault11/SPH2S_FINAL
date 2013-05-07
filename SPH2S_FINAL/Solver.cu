@@ -849,8 +849,8 @@ void Solver::Bind () const
 //------------------------------------------------------------------------------
 void Solver::Advance (float timeStep)
 {
-    //CUDA::Timer t;
-    //t.Start();
+    CUDA::Timer t;
+    t.Start();
     mFluidData.Data->Map();
     mBoundaryData.Data->Map();
     this->computeNeighborhoods();
@@ -859,8 +859,8 @@ void Solver::Advance (float timeStep)
     this->integrate(timeStep);
     mBoundaryData.Data->Unmap();
     mFluidData.Data->Unmap();
-    //t.Stop();
-    //t.DumpElapsed();
+    t.Stop();
+    t.DumpElapsed();
 }
 //------------------------------------------------------------------------------
 void Solver::computeNeighborhoods ()
