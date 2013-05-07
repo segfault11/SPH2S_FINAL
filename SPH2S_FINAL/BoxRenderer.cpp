@@ -150,6 +150,7 @@ void BoxRenderer::SetCamera (const GL::Camera& camera)
 //------------------------------------------------------------------------------
 void BoxRenderer::Render () const
 {
+    glEnable(GL_DEPTH_TEST);
     glUseProgram(mProgram);
     glBindVertexArray(mBoxVAO);
     glDrawArrays(GL_LINES, 0, 36);

@@ -154,9 +154,18 @@ void initSim ()
     );
 
     //  init Renderer
-    gsRenderer = new Renderer(gsParticleData);
+
+    RendererConfig rendererConfig(
+            make_float3(1.0f, 1.0f, 1.0f),
+            0.7f,
+            0.3f,
+            0.2f,
+            0.012f
+        );
+
+    gsRenderer = new Renderer(gsParticleData, rendererConfig);
     gsRenderer->SetCamera(*gsCamera);
-    gsBoundaryRenderer = new Renderer(gsBoundaryParticles);
+    gsBoundaryRenderer = new Renderer(gsBoundaryParticles, rendererConfig);
     gsBoundaryRenderer->SetCamera(*gsCamera);
     gsBoxRenderer = new BoxRenderer(
             make_float3(0.0f, 0.0f, 0.0f),
@@ -181,6 +190,7 @@ void initSim ()
             88.1472f,                // speed of sound in fluid
             0.8f                     // tension coefficient
         );
+    std::cout << std::powf(3.0f/4.0f*Grid::ComputeVolume(particleGrid)/gsParticleData->MaxParticles*1.0f/M_PI, 1.0f/3.0f) << std::endl;
 
     // create solver and set it active
     gsSolver = new Solver(gsParticleData, gsBoundaryParticles, &config); 

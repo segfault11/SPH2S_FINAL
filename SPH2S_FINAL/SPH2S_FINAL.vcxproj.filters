@@ -92,6 +92,9 @@
     <None Include="BoxRendererVertex.glsl">
       <Filter>Renderer\BoxRenderer</Filter>
     </None>
+    <None Include="RendererGeometry.glsl">
+      <Filter>Renderer\Renderer</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Solver.cu">

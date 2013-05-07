@@ -35,6 +35,7 @@
     <None Include="BoxRendererFragment.glsl" />
     <None Include="BoxRendererVertex.glsl" />
     <None Include="RendererFragment.glsl" />
+    <None Include="RendererGeometry.glsl" />
     <None Include="RendererVertex.glsl" />
   </ItemGroup>
   <ItemGroup>

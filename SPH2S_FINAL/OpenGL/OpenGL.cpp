@@ -146,6 +146,7 @@ void GL::AttachShader(GLuint program, const char* filename, GLenum type)
     
     if (!hasCompiled) {
 		printf("Could not compile shader\n");
+        DumpLog(program);
 		glDeleteShader(shader);
 		return;
 	}

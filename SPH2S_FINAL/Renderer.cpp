@@ -2,7 +2,7 @@
 #include "Renderer.h"
 #include <iostream>
 //------------------------------------------------------------------------------
-Renderer::Renderer (const ParticleData* data)
+Renderer::Renderer (const ParticleData* data, const RendererConfig& config)
 : mParticleData(data)
 {
     //==========================================================================
@@ -10,12 +10,26 @@ Renderer::Renderer (const ParticleData* data)
     //==========================================================================    
     mProgram = glCreateProgram();
     GL::AttachShader(mProgram, "RendererVertex.glsl", GL_VERTEX_SHADER);
+    GL::AttachShader(mProgram, "RendererGeometry.glsl", GL_GEOMETRY_SHADER);
     GL::AttachShader(mProgram, "RendererFragment.glsl", GL_FRAGMENT_SHADER);
     GL::BindAttribLocation(mProgram, "inPositions", 0);
     GL::BindAttribLocation(mProgram, "inColorVal", 1);
     GL::BindFragDataLocation(mProgram, "oFragColor", 0);
     GL::LinkProgram(mProgram);
 
+    // set programs uniforms
+    glUseProgram(mProgram);
+    GLint loc = glGetUniformLocation(mProgram, "uLightDir");
+    glUniform3fv(loc, 1, reinterpret_cast<const float*>(&config.LightDir));
+    loc = glGetUniformLocation(mProgram, "uAmbientCoefficient");
+    glUniform1f(loc, config.AmbientCoefficient);
+    loc = glGetUniformLocation(mProgram, "uDiffuseCoefficient");
+    glUniform1f(loc, config.DiffuseCoefficient);
+    loc = glGetUniformLocation(mProgram, "uSpecularCoefficient");
+    glUniform1f(loc, config.SpecularCoefficient);
+    loc = glGetUniformLocation(mProgram, "uParticleRadius");
+    glUniform1f(loc, config.ParticleRadius);
+    
     //==========================================================================
     // Create and configure VAO
     //==========================================================================
