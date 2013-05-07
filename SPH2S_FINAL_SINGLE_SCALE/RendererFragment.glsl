@@ -47,5 +47,10 @@ void main ()
     vec3 color = (uAmbientCoefficient + uDiffuseCoefficient*dot(uLightDir, n) + uSpecularCoefficient*pow(dot(h,n), 3))*colorLight;
 
     oFragColor = vec4(color, 1.0f);
+
+
+    vec4 posClip = uProjMat*posView;
+
+    gl_FragDepth = posClip.z/posClip.w;
 }
 //------------------------------------------------------------------------------

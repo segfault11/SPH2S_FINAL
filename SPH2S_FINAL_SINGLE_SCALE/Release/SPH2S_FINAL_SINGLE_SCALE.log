@@ -1,4 +1,4 @@
-﻿Build started 5/7/2013 11:37:18 PM.
+﻿Build started 5/8/2013 12:05:17 AM.
      1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_SINGLE_SCALE\SPH2S_FINAL_SINGLE_SCALE.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\SPH2S_FINAL_SINGLE_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
@@ -31,4 +31,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.13
+Time Elapsed 00:00:00.11
