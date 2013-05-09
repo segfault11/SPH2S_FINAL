@@ -32,7 +32,7 @@ void main ()
         discard;
     }
 
-    n.z = -sqrt(1.0f - mag2);
+    n.z = sqrt(1.0f - mag2);
 
     // compute view space pos for this fragment
     vec4 posView = inGeometryData.PosView + uParticleRadius*vec4(n, 1.0f);

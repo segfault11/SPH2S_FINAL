@@ -43,7 +43,7 @@ void GL::Camera::Rotate (float upAngle, float vAngle)
 void GL::Camera::RotateAroundFocus (float angX, float dAngY, float angZ)
 {
     GL::Vector3f v;
-    GL::Vector3f::Minus(v, mPosition, mFoc);
+    GL::Vector3f::Substract(v, mPosition, mFoc);
     float x = v.X();
     float r = GL::Vector3f::ComputeNorm(v);
     float angY = std::acos(x/r);
@@ -127,7 +127,7 @@ GL::Vector3f GL::Camera::DirectionVector
 )
 {
     Vector3f dir;
-    Vector3f::Minus(dir, foc, pos);
+    Vector3f::Substract(dir, foc, pos);
     dir.Normalize();
     return dir;    
 }

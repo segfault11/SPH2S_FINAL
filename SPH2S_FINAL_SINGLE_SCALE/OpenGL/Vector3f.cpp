@@ -55,7 +55,7 @@ float GL::Vector3f::ComputeNorm (const Vector3f& a)
     return std::sqrt(a.mX*a.mX + a.mY*a.mY + a.mZ*a.mZ);
 }
 //-----------------------------------------------------------------------------
-void GL::Vector3f::Minus
+void GL::Vector3f::Substract
 (
 	Vector3f& res, 
 	const Vector3f& a, 

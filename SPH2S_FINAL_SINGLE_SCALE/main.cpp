@@ -119,27 +119,27 @@ void keyboard (unsigned char key, int x, int y)
 void initGL ()
 {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
 }
 //------------------------------------------------------------------------------
 void initSim ()
 {
-    //--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
     //  init particle data
     Grid particleGrid = Grid::MakeGrid(
-            make_float3(0.01f, 0.01f, 0.01f),
-            make_float3(0.41f, 0.751f, 0.41f),
-            0.01f
+            make_float3(0.04f, 0.04f, 0.01f),
+            make_float3(0.35f, 0.751f, 0.39f),
+            0.015f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
-    std::cout << gsParticleData->NumParticles << std::endl;
     //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
     // init boundary particles
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, 0.0f),
-            make_float3(1.0f, 1.0f, 1.0f),
-            0.01f
+            make_float3(2.0f, 1.5f, 0.4f),
+            0.015f
         );
     gsBoundaryParticles = ParticleData::CreateParticleBoxCanvas(
         boundaryGrid, 
@@ -150,8 +150,8 @@ void initSim ()
     //--------------------------------------------------------------------------
     //  init camera
     gsCamera = new GL::Camera(
-        GL::Vector3f(0.5f, 0.5f, -1.25f),
-        GL::Vector3f(0.5f, 0.5f, 0.5f),
+        GL::Vector3f(1.0f, 0.75f, 2.0f),
+        GL::Vector3f(1.0f, 0.75f, 0.2f),
         GL::Vector3f(0.0f, 1.0f, 0.0f),
         static_cast<float>(WIDTH)/static_cast<float>(HEIGHT),
         60.0f,
@@ -164,10 +164,10 @@ void initSim ()
     //  init Renderer
     RendererConfig rendererConfig(
             make_float3(1.0f, 1.0f, 1.0f),
-            0.7f,
-            0.3f,
-            0.2f,
-            0.012f
+            0.1f,
+            0.5f,
+            0.5f,
+            0.017f
         );
 
     gsRenderer = new Renderer(gsParticleData, rendererConfig);
@@ -176,7 +176,7 @@ void initSim ()
     gsBoundaryRenderer->SetCamera(*gsCamera);
     gsBoxRenderer = new BoxRenderer(
             make_float3(0.0f, 0.0f, 0.0f),
-            make_float3(1.0f, 1.0f, 1.0f)
+            make_float3(2.0f, 1.6f, 0.4f)
         );
     gsBoxRenderer->SetCamera(*gsCamera);
     //--------------------------------------------------------------------------
@@ -187,13 +187,13 @@ void initSim ()
     // fill out solver's configuration
     SolverConfiguration config = SolverConfiguration::MakeConfiguration(
             make_float3(-0.1f, -0.1f, -0.1f),
-            make_float3(1.1f, 1.1f, 1.1f),
+            make_float3(2.1f, 1.4f, 0.5f),
             Grid::ComputeVolume(particleGrid),
             gsParticleData->MaxParticles,
             35,                      // avg. particle neighbors
             1000.0f,                 // rest density
             30.0f,                   // bulk modulus
-            3.0f,                    // viscosity
+            5.0f,                    // viscosity
             88.1472f,                // speed of sound in fluid
             0.8f                     // tension coefficient
         );

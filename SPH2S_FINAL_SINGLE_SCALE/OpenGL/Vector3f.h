@@ -31,7 +31,7 @@ public:
 		const Vector3f& b);
 	static void ComputeDotProduct (float& res, const Vector3f& a, 
 		const Vector3f& b);
-	static void Minus (Vector3f& res, const Vector3f& a, 
+	static void Substract (Vector3f& res, const Vector3f& a, 
 		const Vector3f& b);
     static float ComputeNorm (const Vector3f& a);
 
