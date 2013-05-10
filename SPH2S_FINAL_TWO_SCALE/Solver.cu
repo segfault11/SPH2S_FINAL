@@ -17,13 +17,15 @@ enum
     HIGH_RES = 1
 };
 //------------------------------------------------------------------------------
+#define COMPL(x) (x + 1)%2
+//------------------------------------------------------------------------------
 
 //==============================================================================
 // UTLITY device kernels definition
 //==============================================================================
 
 //------------------------------------------------------------------------------
-__device__ void computeCoordinatesOff (
+__device__ void computeCoordinatesOff(
     int3& coordinate,            // out: coordinate for [position]
     float3 position,
     const Grid& grid,
@@ -43,7 +45,7 @@ __device__ void computeCoordinatesOff (
     coordinate.z = max(0, min(coordinate.z, grid.Dimensions.z - 1));
 }
 //------------------------------------------------------------------------------
-__device__ void computeCoordinates (
+__device__ void computeCoordinates(
     int3& coordinate,            // out: coordinate for [position]
     float3 position,
     const Grid& grid
@@ -62,7 +64,7 @@ __device__ void computeCoordinates (
     coordinate.z = max(0, min(coordinate.z, grid.Dimensions.z - 1));
 }
 //------------------------------------------------------------------------------
-__device__ void computeHash (
+__device__ void computeHash(
     unsigned int& hash, 
     const int3& coordinate,
     const Grid& grid
@@ -74,7 +76,7 @@ __device__ void computeHash (
         (coordinate.y + grid.Dimensions.y*coordinate.z);
 }
 //------------------------------------------------------------------------------
-__device__ void computeHash (
+__device__ void computeHash(
     unsigned int& hash, 
     float3 position,
     const Grid& grid
@@ -88,12 +90,12 @@ __device__ void computeHash (
     computeHash(hash, coordinate, grid);
 }
 //------------------------------------------------------------------------------
-__device__ inline void computeNorm (float& norm, const float3& a)
+__device__ inline void computeNorm(float& norm, const float3& a)
 {
     norm = sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
 }
 //------------------------------------------------------------------------------
-__device__ inline void computeDistance (
+__device__ inline void computeDistance(
     float& dist, 
     const float3& a, 
     const float3& b
@@ -106,7 +108,7 @@ __device__ inline void computeDistance (
     computeNorm(dist, d); 
 }
 //------------------------------------------------------------------------------
-__device__ inline void evaluatePoly6Kernel (
+__device__ inline void evaluatePoly6Kernel(
     float& res,  // [out] result of evaluation
     float d,     // distance between two particles
     float h      // effective radius 
@@ -128,7 +130,7 @@ __device__ inline void evaluatePoly6Kernel (
     }
 }
 //------------------------------------------------------------------------------
-__device__ inline void evaluateSpikyKernelGradient (
+__device__ inline void evaluateSpikyKernelGradient(
     float3& grad,
     const float3& xij,
     float h
@@ -153,7 +155,7 @@ __device__ inline void evaluateSpikyKernelGradient (
     grad.z = a*xij.z/norm;
 }
 //------------------------------------------------------------------------------
-__device__ inline void evaluateViscosityKernelLaplacian (
+__device__ inline void evaluateViscosityKernelLaplacian(
     float& lapl,
     float dist,
     float h
@@ -172,7 +174,7 @@ __device__ inline void evaluateViscosityKernelLaplacian (
     }
 }
 //------------------------------------------------------------------------------
-__device__ inline void evaluateBoundaryWeight (
+__device__ inline void evaluateBoundaryWeight(
     float& weight, 
     float dist, 
     float h
@@ -201,7 +203,7 @@ __device__ inline void evaluateBoundaryWeight (
     }
 }
 //------------------------------------------------------------------------------
-__device__ inline void computeDensityCell (
+__device__ inline void computeDensityCell(
     float& rhoi,                 // [out] density of particle i 
     const float3& xi,            // position of particle i
     const float* dPositions,     
@@ -236,7 +238,45 @@ __device__ inline void computeDensityCell (
   
 }
 //------------------------------------------------------------------------------
-__device__ inline void computeAccelerationCell (
+__device__ inline void computeDensityCellCompl(
+    float& rhoi,                 // [out] density of particle i 
+    const float3& xi,            // position of particle i
+    const float* dPositions,     
+    unsigned int start,
+    unsigned int end
+)
+{
+    // add up density contribution form particle in this cell ([start], [end])
+    // to the density of the particle i [rhoi]. (in fact only the kernel 
+    // weights are added up, mass is multiplied in the callee, to safe
+    // operations)
+    
+    for (unsigned int j = start; j < end; j++)
+    {
+        float3 xj;
+        xj.x = dPositions[3*j + 0];
+        xj.y = dPositions[3*j + 1];
+        xj.z = dPositions[3*j + 2];
+        float dist;
+        computeDistance(dist, xi, xj);
+
+        if (dist < gConfiguration.EffectiveRadius[LOW_RES])
+        {
+            float weight0 = 0.0f;
+            float weight1 = 0.0f;
+
+            evaluatePoly6Kernel(weight0, dist, 
+                gConfiguration.EffectiveRadius[LOW_RES]);
+            evaluatePoly6Kernel(weight1, dist, 
+                gConfiguration.EffectiveRadius[HIGH_RES]);
+            rhoi += 0.5f*(weight0 + weight1);
+        }
+            
+    }
+  
+}
+//------------------------------------------------------------------------------
+__device__ inline void computeAccelerationCell(
     float3& fi,
     float rhoi,
     float pi,
@@ -321,7 +361,112 @@ __device__ inline void computeAccelerationCell (
 
 }
 //------------------------------------------------------------------------------
-__device__ void computeBoundaryForceCell (
+__device__ inline void computeAccelerationCellCompl(
+    float3& fi,
+    float rhoi,
+    float pi,
+    const float3& xi,        
+    const float3& vi,    
+    const float* dDensities,
+    const float* dPressures,
+    const float* dPositions,     
+    const float* dVelocities,
+    unsigned int start,
+    unsigned int end,
+    unsigned char resID         // resolution id for complement domain
+)
+{
+    for (unsigned int j = start; j < end; j++)
+    {
+        float3 xj;
+        xj.x = dPositions[3*j + 0];
+        xj.y = dPositions[3*j + 1];
+        xj.z = dPositions[3*j + 2];
+        float3 vj;
+        vj.x = dVelocities[3*j + 0];
+        vj.y = dVelocities[3*j + 1];
+        vj.z = dVelocities[3*j + 2];
+        float rhoj = dDensities[j];
+        float pj = dPressures[j];
+        float dist;
+        float3 xij;
+        xij.x = xi.x - xj.x; 
+        xij.y = xi.y - xj.y; 
+        xij.z = xi.z - xj.z; 
+        computeNorm(dist, xij);
+        
+        if (dist != 0.0f && dist < gConfiguration.EffectiveRadius[LOW_RES])
+        {
+            // evaluate the pressure force partice j exerts on particle i
+            float coeffP = -rhoi*gConfiguration.FluidParticleMass[resID]*
+                (pi/(rhoi*rhoi) + pj/(rhoj*rhoj));
+            float3 grad0;
+            float3 grad1;
+            evaluateSpikyKernelGradient(
+                grad0, 
+                xij,
+                gConfiguration.EffectiveRadius[LOW_RES]
+            );
+            evaluateSpikyKernelGradient(
+                grad1, 
+                xij,
+                gConfiguration.EffectiveRadius[HIGH_RES]
+            );
+            fi.x += coeffP*0.5*(grad0.x + grad1.x);
+            fi.y += coeffP*0.5*(grad0.y + grad1.y);
+            fi.z += coeffP*0.5*(grad0.z + grad1.z);
+
+            // evaluate the viscosity force partice j exerts on particle i
+            float coeffV = gConfiguration.Viscosity*
+                gConfiguration.FluidParticleMass[resID]/rhoj;
+            float lapl0 = 0.0f;
+            float lapl1 = 0.0f;
+            evaluateViscosityKernelLaplacian(
+                lapl0, 
+                dist, 
+                gConfiguration.EffectiveRadius[LOW_RES]
+            );
+            evaluateViscosityKernelLaplacian(
+                lapl1, 
+                dist, 
+                gConfiguration.EffectiveRadius[HIGH_RES]
+            );
+            float3 vji;
+            vji.x = vj.x - vi.x;
+            vji.y = vj.y - vi.y;
+            vji.z = vj.z - vi.z;
+            float lapl = 0.5f*(lapl0 + lapl1);
+            fi.x += coeffV*vji.x*lapl;
+            fi.y += coeffV*vji.y*lapl;
+            fi.z += coeffV*vji.z*lapl;
+
+            // evaluate the surface tension force partice j exerts on particle i
+            float weight0;
+            float weight1;
+            evaluatePoly6Kernel(
+                weight0, 
+                dist, 
+                gConfiguration.EffectiveRadius[resID]
+            );
+            evaluatePoly6Kernel(
+                weight1, 
+                dist, 
+                gConfiguration.EffectiveRadius[resID]
+            );
+            float weight = 0.5f*(weight0 + weight1);
+            float coeffT = -weight*gConfiguration.FluidParticleMass[resID]*
+                gConfiguration.TensionCoefficient;
+        
+            fi.x += coeffT*xij.x;
+            fi.y += coeffT*xij.y;
+            fi.z += coeffT*xij.z;
+        }
+
+    }
+
+}
+//------------------------------------------------------------------------------
+__device__ void computeBoundaryForceCell(
     float3& bi,
     const float3& xi,
     const float* dPositions,     
@@ -367,8 +512,7 @@ __device__ void computeBoundaryForceCell (
 //==============================================================================
 
 //------------------------------------------------------------------------------
-__global__ void computeHashs 
-(
+__global__ void computeHashs(
     unsigned int* dHashs,           // hash values of each particle
     unsigned int* dActiveIDs,       // array of active particle ids
     const float* dPositions,        // positions of each particle 
@@ -393,8 +537,7 @@ __global__ void computeHashs
     computeHash(dHashs[idx], pos, gConfiguration.Grid[resID]);
 };
 //------------------------------------------------------------------------------
-__global__ void reorderComputeCellStartEndBoundaryD
-(
+__global__ void reorderComputeCellStartEndBoundaryD(
     unsigned int* dCellStart,
     unsigned int* dCellEnd,
     float* dTempPositions,
@@ -445,8 +588,7 @@ __global__ void reorderComputeCellStartEndBoundaryD
     }
 }
 //------------------------------------------------------------------------------
-__global__ void reorderAndComputeCellStartEndD
-(
+__global__ void reorderAndComputeCellStartEndD(
     unsigned int* dCellStart,
     unsigned int* dCellEnd,
     float* dTempPositions,
@@ -503,12 +645,15 @@ __global__ void reorderAndComputeCellStartEndD
     }
 }
 //------------------------------------------------------------------------------
-__global__ void computeDensitiesPressuresD (
+__global__ void computeDensitiesPressuresD(
     float* dDensities,              // [out] computed densities
     float* dPressures,
     const float* dPositions,
     const unsigned int* dCellStart,
     const unsigned int* dCellEnd,
+    const float* dPositionsCompl,
+    const unsigned int* dCellStartCompl,
+    const unsigned int* dCellEndCompl,
     unsigned int numParticles,
     unsigned char resID             // resolution identifier
 )
@@ -524,9 +669,10 @@ __global__ void computeDensitiesPressuresD (
     xi.x = dPositions[3*idx + 0];
     xi.y = dPositions[3*idx + 1];
     xi.z = dPositions[3*idx + 2];
-
     float rhoi = 0.0f;
-    int3 cs, ce;
+    float rhoiCompl = 0.0f;
+    int3 cs, ce, cc;
+
     computeCoordinatesOff(
         cs, 
         xi, 
@@ -539,7 +685,6 @@ __global__ void computeDensitiesPressuresD (
         gConfiguration.Grid[resID], 
         gConfiguration.EffectiveRadius[resID]
     );
-    int3 cc;
 
     for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
     {
@@ -564,13 +709,51 @@ __global__ void computeDensitiesPressuresD (
         }
     }
 
-    rhoi *= gConfiguration.FluidParticleMass[resID];
+    // compute density contribution of the complementary domain
+    computeCoordinatesOff(
+        cs, 
+        xi, 
+        gConfiguration.Grid[COMPL(resID)], 
+        -gConfiguration.EffectiveRadius[LOW_RES]
+    );
+    computeCoordinatesOff(
+        ce, 
+        xi, 
+        gConfiguration.Grid[COMPL(resID)], 
+        gConfiguration.EffectiveRadius[LOW_RES]
+    );
+
+    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
+    {
+        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
+        {
+            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
+            {
+                unsigned int hash;
+                computeHash(hash, cc, gConfiguration.Grid[COMPL(resID)]);
+                unsigned int start = dCellStartCompl[hash];
+                unsigned int end = dCellEndCompl[hash];
+
+                computeDensityCellCompl(
+                    rhoiCompl,
+                    xi,
+                    dPositions,
+                    start,
+                    end
+                );
+            }
+        }
+    }
+
+
+    rhoi = rhoi*gConfiguration.FluidParticleMass[resID] + 
+        rhoiCompl*gConfiguration.FluidParticleMass[COMPL(resID)];
     dDensities[idx] = rhoi;
     dPressures[idx] = gConfiguration.BulkModulus*
         (rhoi - gConfiguration.RestDensity);
 }
 //------------------------------------------------------------------------------
-__global__ void computeAccelerationsD (
+__global__ void computeAccelerationsD(
     float* dAccelerations,
     const float* dDensities,              
     const float* dPressures,
@@ -578,6 +761,12 @@ __global__ void computeAccelerationsD (
     const float* dVelocities,
     const unsigned int* dCellStart,
     const unsigned int* dCellEnd,
+    const float* dDensitiesCompl,              
+    const float* dPressuresCompl,
+    const float* dPositionsCompl,
+    const float* dVelocitiesCompl,
+    const unsigned int* dCellStartCompl,
+    const unsigned int* dCellEndCompl,
     const float* dBoundaryPositions,
     const unsigned int* dBoundaryCellStart,
     const unsigned int* dBoundaryCellEnd,
@@ -654,18 +843,18 @@ __global__ void computeAccelerationsD (
         }
     }
 
-
+    // compute force contribution of the complementary domain
     computeCoordinatesOff(
         cs, 
         xi, 
-        gConfiguration.Grid[0], 
-        -gConfiguration.EffectiveRadius[0]
+        gConfiguration.Grid[COMPL(resID)], 
+        -gConfiguration.EffectiveRadius[LOW_RES]
     );
     computeCoordinatesOff(
         ce, 
         xi, 
-        gConfiguration.Grid[0], 
-        gConfiguration.EffectiveRadius[0]
+        gConfiguration.Grid[COMPL(resID)], 
+        gConfiguration.EffectiveRadius[LOW_RES]
     );
 
     for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
@@ -675,7 +864,50 @@ __global__ void computeAccelerationsD (
             for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
             {
                 unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[0]);
+                computeHash(hash, cc, gConfiguration.Grid[COMPL(resID)]);
+                unsigned int start = dCellStartCompl[hash];
+                unsigned int end = dCellEndCompl[hash];
+
+                computeAccelerationCellCompl(
+                    fi,
+                    rhoi,
+                    pi,
+                    xi,
+                    vi,
+                    dDensitiesCompl,
+                    dPressuresCompl,
+                    dPositionsCompl,
+                    dVelocitiesCompl,
+                    start,
+                    end,
+                    COMPL(resID)
+                );
+            }
+        }
+    }
+
+    // compute force contribution of the boundary
+    computeCoordinatesOff(
+        cs, 
+        xi, 
+        gConfiguration.Grid[LOW_RES], 
+        -gConfiguration.EffectiveRadius[LOW_RES]
+    );
+    computeCoordinatesOff(
+        ce, 
+        xi, 
+        gConfiguration.Grid[LOW_RES], 
+        gConfiguration.EffectiveRadius[LOW_RES]
+    );
+
+    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
+    {
+        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
+        {
+            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
+            {
+                unsigned int hash;
+                computeHash(hash, cc, gConfiguration.Grid[LOW_RES]);
                 unsigned int start = dBoundaryCellStart[hash];
                 unsigned int end = dBoundaryCellEnd[hash];
                 computeBoundaryForceCell(
@@ -684,7 +916,7 @@ __global__ void computeAccelerationsD (
                     dBoundaryPositions,
                     start,
                     end,
-                    0
+                    LOW_RES
                 );
             }
         }
@@ -962,8 +1194,8 @@ Solver::Solver (
 //------------------------------------------------------------------------------
 Solver::~Solver ()
 {
-    delete mFluidData[0];
-    delete mFluidData[1];
+    delete mFluidData[LOW_RES];
+    delete mFluidData[HIGH_RES];
     delete mBoundaryData;
 }
 //------------------------------------------------------------------------------
@@ -1058,6 +1290,9 @@ void Solver::computeDensities (unsigned char resID)
         mFluidData[resID]->dTempPositions,
         mFluidData[resID]->dCellStart,
         mFluidData[resID]->dCellEnd,
+        mFluidData[COMPL(resID)]->dTempPositions,
+        mFluidData[COMPL(resID)]->dCellStart,
+        mFluidData[COMPL(resID)]->dCellEnd,
         mFluidData[resID]->Data->NumParticles,
         resID
     );
@@ -1074,6 +1309,12 @@ void Solver::computeAccelerations (unsigned char resID)
         mFluidData[resID]->dTempVelocities,
         mFluidData[resID]->dCellStart,
         mFluidData[resID]->dCellEnd,
+        mFluidData[COMPL(resID)]->dDensities,
+        mFluidData[COMPL(resID)]->dPressures,
+        mFluidData[COMPL(resID)]->dTempPositions,
+        mFluidData[COMPL(resID)]->dTempVelocities,
+        mFluidData[COMPL(resID)]->dCellStart,
+        mFluidData[COMPL(resID)]->dCellEnd,
         mBoundaryData->Data->dPositions,
         mBoundaryData->dCellStart,
         mBoundaryData->dCellEnd,

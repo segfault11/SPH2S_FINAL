@@ -62,7 +62,7 @@ int main (int argc, char* argv[])
 void display () 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gsSolver->Advance(0.001f);
+    gsSolver->Advance(0.00025f);
     gsRenderer->SetCamera(*gsCamera);
     gsRenderer->Render();
     gsRendererHigh->SetCamera(*gsCamera);
@@ -172,6 +172,7 @@ void initSim ()
 
     //  init Renderer
     RendererConfig rendererConfig(
+            make_float3(0.0f, 0.5f, 1.0f),
             make_float3(1.0f, 1.0f, 1.0f),
             0.1f,
             0.5f,
@@ -183,6 +184,7 @@ void initSim ()
     
     // init highres particle rendere
     RendererConfig rendererConfigHigh(
+            make_float3(1.0f, 0.5f, 0.0f),
             make_float3(1.0f, 1.0f, 1.0f),
             0.1f,
             0.5f,

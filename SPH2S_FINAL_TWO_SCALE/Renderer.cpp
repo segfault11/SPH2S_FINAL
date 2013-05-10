@@ -19,7 +19,9 @@ Renderer::Renderer (const ParticleData* data, const RendererConfig& config)
 
     // set programs uniforms
     glUseProgram(mProgram);
-    GLint loc = glGetUniformLocation(mProgram, "uLightDir");
+    GLint loc = glGetUniformLocation(mProgram, "uLightColor");
+    glUniform3fv(loc, 1, reinterpret_cast<const float*>(&config.LightColor));
+    loc = glGetUniformLocation(mProgram, "uLightDir");
     glUniform3fv(loc, 1, reinterpret_cast<const float*>(&config.LightDir));
     loc = glGetUniformLocation(mProgram, "uAmbientCoefficient");
     glUniform1f(loc, config.AmbientCoefficient);

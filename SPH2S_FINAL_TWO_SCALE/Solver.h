@@ -26,7 +26,6 @@ struct SolverConfiguration
     )
     {
         SolverConfiguration config;
-
         config.EffectiveRadius[0] = std::powf(
                 0.75f*volume*static_cast<float>(avgParticles)/
                 (M_PI*static_cast<float>(numParticles)), 
@@ -36,7 +35,6 @@ struct SolverConfiguration
         config.FluidParticleMass[0] = restDensity*volume/
             static_cast<float>(numParticles);
         config.FluidParticleMass[1] = 1.0f/8.0f*config.FluidParticleMass[0];
-
         config.BoundaryParticleMass = config.FluidParticleMass[0];
         config.RestDensity = restDensity;
         config.Grid[0] = Grid::MakeGrid(origin, end, config.EffectiveRadius[0]);

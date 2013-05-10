@@ -6,6 +6,7 @@
 uniform mat4 uViewMat;
 uniform mat4 uProjMat;
 uniform vec3 uLightDir;
+uniform vec3 uLightColor;
 uniform float uAmbientCoefficient;
 uniform float uDiffuseCoefficient;
 uniform float uSpecularCoefficient;

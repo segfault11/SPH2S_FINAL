@@ -10,6 +10,7 @@ class RendererConfig
 {
 public:
     RendererConfig (
+        float3 lightColor,
         float3 lightDir,
         float ambientCoefficient,
         float diffuseCoefficient,
@@ -17,6 +18,7 @@ public:
         float particleRadius
     )
     :
+        LightColor(lightColor),
         LightDir(lightDir),
         AmbientCoefficient(ambientCoefficient),
         DiffuseCoefficient(diffuseCoefficient),
@@ -26,6 +28,7 @@ public:
     
     }
 
+    float3 LightColor;
     float3 LightDir;
     float AmbientCoefficient;
     float DiffuseCoefficient;
