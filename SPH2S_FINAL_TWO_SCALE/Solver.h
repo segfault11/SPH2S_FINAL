@@ -12,7 +12,7 @@
 //------------------------------------------------------------------------------
 struct SolverConfiguration
 {
-    static SolverConfiguration MakeConfiguration (
+    static SolverConfiguration MakeConfiguration(
         float3 origin,                  // domain origin
         float3 end,                     // domain end
         float volume,                   // fluid volume
@@ -22,8 +22,7 @@ struct SolverConfiguration
         float bulkModulus,
         float viscosity,
         float speedSound,
-        float tensionCoefficient,
-        float blendIncrement
+        float tensionCoefficient
     )
     {
         SolverConfiguration config;
@@ -33,10 +32,11 @@ struct SolverConfiguration
                 (M_PI*static_cast<float>(numParticles)), 
                 1.0f/3.0f
             ); 
-        config.EffectiveRadius[1] = config.EffectiveRadius[0]/2.0f;
+        config.EffectiveRadius[1] = 0.5f*config.EffectiveRadius[0];
         config.FluidParticleMass[0] = restDensity*volume/
             static_cast<float>(numParticles);
-        config.FluidParticleMass[1] = config.FluidParticleMass[0]/8.0f;
+        config.FluidParticleMass[1] = 1.0f/8.0f*config.FluidParticleMass[0];
+
         config.BoundaryParticleMass = config.FluidParticleMass[0];
         config.RestDensity = restDensity;
         config.Grid[0] = Grid::MakeGrid(origin, end, config.EffectiveRadius[0]);
@@ -45,7 +45,6 @@ struct SolverConfiguration
         config.Viscosity = viscosity;
         config.SpeedSound = speedSound;
         config.TensionCoefficient = tensionCoefficient;
-        config.BlendIncrement = blendIncrement;
         return config;
     };
 
@@ -57,7 +56,6 @@ struct SolverConfiguration
     float Viscosity;
     float SpeedSound;
     float TensionCoefficient;
-    float BlendIncrement;
     ::Grid Grid[2];                // simulation grid
 };
 //------------------------------------------------------------------------------
@@ -67,8 +65,8 @@ class Solver
     {
     // stores particle data and additional information needed for the simulation
     public:
-        SPHParticleData (ParticleData* data, unsigned int numGridCells);
-        ~SPHParticleData ();
+        SPHParticleData(ParticleData* data, unsigned int numGridCells);
+        ~SPHParticleData();
 
         ::ParticleData* Data;
 
@@ -77,21 +75,13 @@ class Solver
         float* dAccelerations;
         float* dVelocities; 
 
-        float* dTempPositions;      // temporary positions used for 
-                                    // actual computations
-        float* dTempVelocities;     // temporary velocities used for 
-                                    // actual computations
-
-        float* dBlendCoefficients;
-        float* dTempBlendCoefficients;
-        unsigned char* dStates;
-        unsigned char* dTempStates;
+        float* dTempPositions;      // temporary positions used for actual computations
+        float* dTempVelocities;     // temporary velocities used for actual computations
 
         unsigned int* dActiveIDs;
         unsigned int* dHashs;
         unsigned int* dCellStart;
         unsigned int* dCellEnd;
-        unsigned int* dNumParticles; // used to count particles 
         unsigned int NumGridCells;
 
         // cuda kernel information
@@ -103,8 +93,8 @@ class Solver
     class BoundaryParticleData
     {
     public:
-        BoundaryParticleData (ParticleData* data, unsigned int numGridCells);
-        ~BoundaryParticleData ();
+        BoundaryParticleData(ParticleData* data, unsigned int numGridCells);
+        ~BoundaryParticleData();
         
         ::ParticleData* Data;
             
@@ -129,20 +119,16 @@ public:
     ~Solver();
 
     void Bind() const;
-    void Advance (float dt);
+    void Advance(float dt);
 
 private:
-    inline void computeNeighborhoodsLow ();
-    inline void computeNeighborhoodsHigh ();
-    inline void computeDensitiesLow ();
-    inline void computeDensitiesHigh ();
-    inline void computeAccelerationsAndUpdateStatesLow ();
-    inline void computeAccelerationsAndUpdateStatesHigh ();
-    inline void updateSystem (SPHParticleData& fluidData, float timeStep);
+    inline void computeNeighborhoods(unsigned char resID);
+    inline void computeDensities(unsigned char resID);
+    inline void computeAccelerations(unsigned char resID);
+    inline void integrate(unsigned char resID, float timeStep);
 
     SolverConfiguration mConfiguration;
-    SPHParticleData mFluidData;
-    SPHParticleData mFluidDataHigh;
-    BoundaryParticleData mBoundaryData;
+    SPHParticleData* mFluidData[2];
+    BoundaryParticleData* mBoundaryData;
 };
 //------------------------------------------------------------------------------

@@ -11,16 +11,11 @@
 //------------------------------------------------------------------------------
 __constant__ SolverConfiguration gConfiguration;    // current solver's config.
 //------------------------------------------------------------------------------
-enum
+enum 
 {
-    // particle state
-    PS_DEFAULT = 0,
-    PS_DELETE,          // particle is marked for deletion
-    PS_INSERT           // particle is marked for insertion
+    LOW_RES = 0,
+    HIGH_RES = 1
 };
-//------------------------------------------------------------------------------
-#define BLOCK_DIMENSIONS_X 256
-#define EMPTY_CELL_ID 0xFFFFFFFF
 //------------------------------------------------------------------------------
 
 //==============================================================================
@@ -212,7 +207,7 @@ __device__ inline void computeDensityCell (
     const float* dPositions,     
     unsigned int start,
     unsigned int end,
-    float effectiveRadius
+    unsigned char resID
 )
 {
     // add up density contribution form particle in this cell ([start], [end])
@@ -229,59 +224,12 @@ __device__ inline void computeDensityCell (
         float dist;
         computeDistance(dist, xi, xj);
 
-        if (dist < effectiveRadius)
+        if (dist < gConfiguration.EffectiveRadius[resID])
         {
             float weight = 0.0f;
-            evaluatePoly6Kernel(
-                weight, 
-                dist, 
-                effectiveRadius
-            );
+            evaluatePoly6Kernel(weight, dist, 
+                gConfiguration.EffectiveRadius[resID]);
             rhoi += weight;
-        }
-            
-    }
-  
-}
-//------------------------------------------------------------------------------
-__device__ inline void computeDensityCellComplement (
-    float& rhoi,                 // [out] density of particle i 
-    const float3& xi,            // position of particle i
-    const float* dPositions,     // high resolution positions
-    unsigned int start,
-    unsigned int end
-)
-{
-    // add up density contribution form particle in this cell ([start], [end])
-    // to the density of the particle i [rhoi]. (in fact only the kernel 
-    // weights are added up, mass is multiplied in the callee, to safe
-    // operations)
-    
-    for (unsigned int j = start; j < end; j++)
-    {
-        float3 xj;
-        xj.x = dPositions[3*j + 0];
-        xj.y = dPositions[3*j + 1];
-        xj.z = dPositions[3*j + 2];
-        float dist;
-        computeDistance(dist, xi, xj);
-
-        if (dist < gConfiguration.EffectiveRadius[0])
-        {
-            float weight0 = 0.0f;
-            float weight1 = 0.0f;
-
-            evaluatePoly6Kernel(
-                weight0, 
-                dist, 
-                gConfiguration.EffectiveRadius[0]
-            );
-            evaluatePoly6Kernel(
-                weight1, 
-                dist, 
-                gConfiguration.EffectiveRadius[1]
-            );
-            rhoi += 0.5f*(weight0 + weight1);
         }
             
     }
@@ -300,7 +248,7 @@ __device__ inline void computeAccelerationCell (
     const float* dVelocities,
     unsigned int start,
     unsigned int end,
-    unsigned char res           // res of the particle 0 == low, 1 == high
+    unsigned char resID
 )
 {
     for (unsigned int j = start; j < end; j++)
@@ -322,16 +270,16 @@ __device__ inline void computeAccelerationCell (
         xij.z = xi.z - xj.z; 
         computeNorm(dist, xij);
         
-        if (dist != 0.0f && dist < gConfiguration.EffectiveRadius[res])
+        if (dist != 0.0f && dist < gConfiguration.EffectiveRadius[resID])
         {
             // evaluate the pressure force partice j exerts on particle i
-            float coeffP = -rhoi*gConfiguration.FluidParticleMass[res]*
+            float coeffP = -rhoi*gConfiguration.FluidParticleMass[resID]*
                 (pi/(rhoi*rhoi) + pj/(rhoj*rhoj));
             float3 grad;
             evaluateSpikyKernelGradient(
                 grad, 
                 xij,
-                gConfiguration.EffectiveRadius[res]
+                gConfiguration.EffectiveRadius[resID]
             );
             fi.x += coeffP*grad.x;
             fi.y += coeffP*grad.y;
@@ -339,12 +287,12 @@ __device__ inline void computeAccelerationCell (
 
             // evaluate the viscosity force partice j exerts on particle i
             float coeffV = gConfiguration.Viscosity*
-                gConfiguration.FluidParticleMass[res]/rhoj;
+                gConfiguration.FluidParticleMass[resID]/rhoj;
             float lapl = 0.0f;
             evaluateViscosityKernelLaplacian(
                 lapl, 
                 dist, 
-                gConfiguration.EffectiveRadius[res]
+                gConfiguration.EffectiveRadius[resID]
             );
             float3 vji;
             vji.x = vj.x - vi.x;
@@ -359,113 +307,9 @@ __device__ inline void computeAccelerationCell (
             evaluatePoly6Kernel(
                 weight, 
                 dist, 
-                gConfiguration.EffectiveRadius[res]
+                gConfiguration.EffectiveRadius[resID]
             );
-            float coeffT = -weight*gConfiguration.FluidParticleMass[res]*
-                gConfiguration.TensionCoefficient;
-        
-            fi.x += coeffT*xij.x;
-            fi.y += coeffT*xij.y;
-            fi.z += coeffT*xij.z;
-        }
-
-    }
-
-}
-//------------------------------------------------------------------------------
-__device__ inline void computeAccelerationCellComplement (
-    float3& fi,
-    float rhoi,
-    float pi,
-    const float3& xi,        
-    const float3& vi,    
-    const float* dDensities,
-    const float* dPressures,
-    const float* dPositions,     
-    const float* dVelocities,
-    unsigned int start,
-    unsigned int end,
-    unsigned char res           // res of the particle 0 == low, 1 == high
-)
-{
-    for (unsigned int j = start; j < end; j++)
-    {
-        float3 xj;
-        xj.x = dPositions[3*j + 0];
-        xj.y = dPositions[3*j + 1];
-        xj.z = dPositions[3*j + 2];
-        float3 vj;
-        vj.x = dVelocities[3*j + 0];
-        vj.y = dVelocities[3*j + 1];
-        vj.z = dVelocities[3*j + 2];
-        float rhoj = dDensities[j];
-        float pj = dPressures[j];
-        float dist;
-        float3 xij;
-        xij.x = xi.x - xj.x; 
-        xij.y = xi.y - xj.y; 
-        xij.z = xi.z - xj.z; 
-        computeNorm(dist, xij);
-        
-        if (dist != 0.0f && dist < gConfiguration.EffectiveRadius[0])
-        {
-            // evaluate the pressure force partice j exerts on particle i
-            float coeffP = -rhoi*gConfiguration.FluidParticleMass[res]*
-                (pi/(rhoi*rhoi) + pj/(rhoj*rhoj));
-            float3 grad0;
-            float3 grad1;
-            evaluateSpikyKernelGradient(
-                grad0, 
-                xij,
-                gConfiguration.EffectiveRadius[res]
-            );
-            evaluateSpikyKernelGradient(
-                grad1, 
-                xij,
-                gConfiguration.EffectiveRadius[res]
-            );
-            fi.x += coeffP*0.5f*(grad0.x + grad1.x);
-            fi.y += coeffP*0.5f*(grad0.y + grad1.y);
-            fi.z += coeffP*0.5f*(grad0.z + grad1.z);
-
-            // evaluate the viscosity force partice j exerts on particle i
-            float coeffV = gConfiguration.Viscosity*
-                gConfiguration.FluidParticleMass[res]/rhoj;
-            float lapl0 = 0.0f;
-            float lapl1 = 0.0f;
-            evaluateViscosityKernelLaplacian(
-                lapl0, 
-                dist, 
-                gConfiguration.EffectiveRadius[res]
-            );
-            evaluateViscosityKernelLaplacian(
-                lapl1, 
-                dist, 
-                gConfiguration.EffectiveRadius[res]
-            );
-            float3 vji;
-            vji.x = vj.x - vi.x;
-            vji.y = vj.y - vi.y;
-            vji.z = vj.z - vi.z;
-            fi.x += coeffV*vji.x*0.5f*(lapl0 + lapl1);
-            fi.y += coeffV*vji.y*0.5f*(lapl0 + lapl1);
-            fi.z += coeffV*vji.z*0.5f*(lapl0 + lapl1);
-
-            // evaluate the surface tension force partice j exerts on particle i
-            float weight0 = 0.0f;
-            float weight1 = 0.0f;
-            evaluatePoly6Kernel(
-                weight0, 
-                dist, 
-                gConfiguration.EffectiveRadius[0]
-            );
-            evaluatePoly6Kernel(
-                weight1, 
-                dist, 
-                gConfiguration.EffectiveRadius[1]
-            );
-            float coeffT = -0.5f*(weight0 + weight1)*
-                gConfiguration.FluidParticleMass[res]*
+            float coeffT = -weight*gConfiguration.FluidParticleMass[resID]*
                 gConfiguration.TensionCoefficient;
         
             fi.x += coeffT*xij.x;
@@ -483,7 +327,7 @@ __device__ void computeBoundaryForceCell (
     const float* dPositions,     
     unsigned int start,
     unsigned int end,
-    unsigned char res
+    unsigned char resID
 )
 {
     for (unsigned int j = start; j < end; j++)
@@ -499,16 +343,16 @@ __device__ void computeBoundaryForceCell (
         float dist;
         computeNorm(dist, xij); 
 
-        if (dist < gConfiguration.EffectiveRadius[res])
+        if (dist < gConfiguration.EffectiveRadius[resID])
         {
             float weight = 0.0f;
             evaluateBoundaryWeight(
                 weight, 
                 dist, 
-                gConfiguration.EffectiveRadius[res]
+                gConfiguration.EffectiveRadius[resID]
             );
             weight*= gConfiguration.BoundaryParticleMass/
-                (gConfiguration.FluidParticleMass[res] + 
+                (gConfiguration.FluidParticleMass[resID] + 
                 gConfiguration.BoundaryParticleMass);
             bi.x += weight*xij.x/dist;
             bi.y += weight*xij.y/dist;
@@ -523,12 +367,13 @@ __device__ void computeBoundaryForceCell (
 //==============================================================================
 
 //------------------------------------------------------------------------------
-__global__ void computeHashsLowD
+__global__ void computeHashs 
 (
     unsigned int* dHashs,           // hash values of each particle
     unsigned int* dActiveIDs,       // array of active particle ids
     const float* dPositions,        // positions of each particle 
-    unsigned int numParticles       // number of ids in the id array
+    unsigned int numParticles,      // number of ids in the id array
+    unsigned char resID
 )
 {
     unsigned int idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -538,39 +383,14 @@ __global__ void computeHashsLowD
         return;
     }
 
-    unsigned int id = dActiveIDs[idx];
+    dActiveIDs[idx] = idx;
 
     float3 pos;
-    pos.x = dPositions[3*id + 0];
-    pos.y = dPositions[3*id + 1];
-    pos.z = dPositions[3*id + 2];
+    pos.x = dPositions[3*idx + 0];
+    pos.y = dPositions[3*idx + 1];
+    pos.z = dPositions[3*idx + 2];
 
-    computeHash(dHashs[idx], pos, gConfiguration.Grid[0]);
-};
-//------------------------------------------------------------------------------
-__global__ void computeHashsHighD
-(
-    unsigned int* dHashs,           // hash values of each particle
-    unsigned int* dActiveIDs,       // array of active particle ids
-    const float* dPositions,        // positions of each particle 
-    unsigned int numParticles       // number of ids in the id array
-)
-{
-    unsigned int idx = blockIdx.x*blockDim.x + threadIdx.x;
-
-    if (idx >= numParticles)
-    {
-        return;
-    }
-
-    unsigned int id = dActiveIDs[idx];
-
-    float3 pos;
-    pos.x = dPositions[3*id + 0];
-    pos.y = dPositions[3*id + 1];
-    pos.z = dPositions[3*id + 2];
-
-    computeHash(dHashs[idx], pos, gConfiguration.Grid[1]);
+    computeHash(dHashs[idx], pos, gConfiguration.Grid[resID]);
 };
 //------------------------------------------------------------------------------
 __global__ void reorderComputeCellStartEndBoundaryD
@@ -631,13 +451,9 @@ __global__ void reorderAndComputeCellStartEndD
     unsigned int* dCellEnd,
     float* dTempPositions,
     float* dTempVelocities,
-    float* dTempBlendCoefficients,
-    unsigned char* dTempStates,
     unsigned int* dSortedIDs,
     const float* dPositions,
     const float* dVelocities,
-    const float* dBlendVelocities,
-    const unsigned char* dStates,
     const unsigned int* dHashs,
     unsigned int numParticles
 )
@@ -655,13 +471,11 @@ __global__ void reorderAndComputeCellStartEndD
     dTempPositions[3*idx + 0] = dPositions[3*id + 0]; 
     dTempPositions[3*idx + 1] = dPositions[3*id + 1]; 
     dTempPositions[3*idx + 2] = dPositions[3*id + 2]; 
+    
     dTempVelocities[3*idx + 0] = dVelocities[3*id + 0]; 
     dTempVelocities[3*idx + 1] = dVelocities[3*id + 1]; 
     dTempVelocities[3*idx + 2] = dVelocities[3*id + 2];
-    dTempBlendCoefficients[idx] = dBlendVelocities[id];
-    dTempStates[idx] = dStates[id];
-    dSortedIDs[idx] = idx;
-
+    
     // compute cell start end ids
     int hash = dHashs[idx];
     sharedHash[threadIdx.x + 1] = hash;
@@ -689,20 +503,16 @@ __global__ void reorderAndComputeCellStartEndD
     }
 }
 //------------------------------------------------------------------------------
-__global__ void computeDensitiesPressuresLowD (
+__global__ void computeDensitiesPressuresD (
     float* dDensities,              // [out] computed densities
-    float* dPressures,              // [out] computed pressures
+    float* dPressures,
     const float* dPositions,
-    const float* dPositionsHigh,
     const unsigned int* dCellStart,
     const unsigned int* dCellEnd,
-    const unsigned int* dCellStartHigh,
-    const unsigned int* dCellEndHigh,
-    unsigned int numParticles
+    unsigned int numParticles,
+    unsigned char resID             // resolution identifier
 )
 {
-    // compute densities and pressures for the low resolution particles.
-
     unsigned int idx = blockDim.x*blockIdx.x + threadIdx.x;
 
     if (idx >= numParticles)
@@ -716,25 +526,20 @@ __global__ void computeDensitiesPressuresLowD (
     xi.z = dPositions[3*idx + 2];
 
     float rhoi = 0.0f;
-    float rhoiComplement = 0.0f;
     int3 cs, ce;
-    int3 cc;
-
-    //--------------------------------------------------------------------------
-    // compute the density contribution of the low res domain
     computeCoordinatesOff(
         cs, 
         xi, 
-        gConfiguration.Grid[0], 
-        -gConfiguration.EffectiveRadius[0]
+        gConfiguration.Grid[resID], 
+        -gConfiguration.EffectiveRadius[resID]
     );
     computeCoordinatesOff(
         ce, 
         xi, 
-        gConfiguration.Grid[0], 
-        gConfiguration.EffectiveRadius[0]
+        gConfiguration.Grid[resID], 
+        gConfiguration.EffectiveRadius[resID]
     );
-
+    int3 cc;
 
     for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
     {
@@ -743,7 +548,7 @@ __global__ void computeDensitiesPressuresLowD (
             for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
             {
                 unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[0]);
+                computeHash(hash, cc, gConfiguration.Grid[resID]);
                 unsigned int start = dCellStart[hash];
                 unsigned int end = dCellEnd[hash];
 
@@ -753,194 +558,31 @@ __global__ void computeDensitiesPressuresLowD (
                     dPositions,
                     start,
                     end,
-                    gConfiguration.EffectiveRadius[0]
+                    resID
                 );
             }
         }
     }
-    //--------------------------------------------------------------------------
 
-    //--------------------------------------------------------------------------
-    // compute the density contribution of the high res domain
-    computeCoordinatesOff(
-        cs, 
-        xi, 
-        gConfiguration.Grid[1], 
-        -gConfiguration.EffectiveRadius[0]
-    );
-    computeCoordinatesOff(
-        ce, 
-        xi, 
-        gConfiguration.Grid[1], 
-        gConfiguration.EffectiveRadius[0]
-    );
-
-    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    {
-        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-        {
-            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
-            {
-                unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[1]);
-                unsigned int start = dCellStartHigh[hash];
-                unsigned int end = dCellStartHigh[hash];
-
-                computeDensityCellComplement(
-                    rhoiComplement,
-                    xi,
-                    dPositionsHigh,
-                    start,
-                    end
-                );
-            }
-        }
-    }
-    //--------------------------------------------------------------------------    
-
-    rhoi = rhoi*gConfiguration.FluidParticleMass[0] + 
-        rhoiComplement*gConfiguration.FluidParticleMass[1];
+    rhoi *= gConfiguration.FluidParticleMass[resID];
     dDensities[idx] = rhoi;
     dPressures[idx] = gConfiguration.BulkModulus*
         (rhoi - gConfiguration.RestDensity);
 }
 //------------------------------------------------------------------------------
-__global__ void computeDensitiesPressuresHighD (
-    float* dDensities,              // [out] computed densities
-    float* dPressures,              // [out] computed pressures
-    const float* dPositions,
-    const float* dPositionsLow,
-    const unsigned int* dCellStart,
-    const unsigned int* dCellEnd,
-    const unsigned int* dCellStartLow,
-    const unsigned int* dCellEndLow,
-    unsigned int numParticles
-)
-{
-    // compute densities and pressures for the high resolution particles.
-
-    unsigned int idx = blockDim.x*blockIdx.x + threadIdx.x;
-
-    if (idx >= numParticles)
-    {
-        return;
-    }
-
-    float3 xi;
-    xi.x = dPositions[3*idx + 0];
-    xi.y = dPositions[3*idx + 1];
-    xi.z = dPositions[3*idx + 2];
-
-    float rhoi = 0.0f;
-    float rhoiComplement = 0.0f;
-    int3 cs, ce;
-    int3 cc;
-
-    //--------------------------------------------------------------------------
-    // compute the density contribution of the high res domain
-    computeCoordinatesOff(
-        cs, 
-        xi, 
-        gConfiguration.Grid[1], 
-        -gConfiguration.EffectiveRadius[1]
-    );
-    computeCoordinatesOff(
-        ce, 
-        xi, 
-        gConfiguration.Grid[1], 
-        gConfiguration.EffectiveRadius[1]
-    );
-
-    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    {
-        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-        {
-            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
-            {
-                unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[1]);
-                unsigned int start = dCellStart[hash];
-                unsigned int end = dCellEnd[hash];
-
-                computeDensityCell(
-                    rhoi,
-                    xi,
-                    dPositions,
-                    start,
-                    end,
-                    gConfiguration.EffectiveRadius[1]
-                );
-
-                rhoi += end-EMPTY_CELL_ID;
-            }
-        }
-    }
-    //--------------------------------------------------------------------------
-
-    //--------------------------------------------------------------------------
-    // compute the density contribution of the low res domain
-    //computeCoordinatesOff(
-    //    cs, 
-    //    xi, 
-    //    gConfiguration.Grid[0], 
-    //    -gConfiguration.EffectiveRadius[0]
-    //);
-    //computeCoordinatesOff(
-    //    ce, 
-    //    xi, 
-    //    gConfiguration.Grid[0], 
-    //    gConfiguration.EffectiveRadius[0]
-    //);
-
-    //for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    //{
-    //    for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-    //    {
-    //        for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
-    //        {
-    //            unsigned int hash;
-    //            computeHash(hash, cc, gConfiguration.Grid[0]);
-    //            unsigned int start = dCellStartLow[hash];
-    //            unsigned int end = dCellStartLow[hash];
-
-    //            computeDensityCellComplement(
-    //                rhoiComplement,
-    //                xi,
-    //                dPositionsLow,
-    //                start,
-    //                end
-    //            );
-    //        }
-    //    }
-    //}
-    //--------------------------------------------------------------------------    
-
-    rhoi = rhoi*gConfiguration.FluidParticleMass[1] + 
-        rhoiComplement*gConfiguration.FluidParticleMass[0];
-    dDensities[idx] = rhoi;
-    dPressures[idx] = gConfiguration.BulkModulus*
-        (rhoi - gConfiguration.RestDensity);
-}
-//------------------------------------------------------------------------------
-__global__ void computeAccelerationsAndUpdateStatesLowD (
+__global__ void computeAccelerationsD (
     float* dAccelerations,
-    unsigned char* dStates,
     const float* dDensities,              
     const float* dPressures,
     const float* dPositions,
     const float* dVelocities,
-    const float* dDensitiesHigh,              
-    const float* dPressuresHigh,
-    const float* dPositionsHigh,
-    const float* dVelocitiesHigh,
     const unsigned int* dCellStart,
     const unsigned int* dCellEnd,
-    const unsigned int* dCellStartHigh,
-    const unsigned int* dCellEndHigh,
     const float* dBoundaryPositions,
     const unsigned int* dBoundaryCellStart,
     const unsigned int* dBoundaryCellEnd,
-    unsigned int numParticles
+    unsigned int numParticles,
+    unsigned char resID
 )
 {
     unsigned int idx = blockDim.x*blockIdx.x + threadIdx.x;
@@ -968,21 +610,19 @@ __global__ void computeAccelerationsAndUpdateStatesLowD (
     bi.x = 0.0f;
     bi.y = 0.0f;
     bi.z = 0.0f;
-    int3 cs, ce;
-    int3 cc;
+    int3 cc, cs, ce;
 
-    // compute force contribution from the same domain
     computeCoordinatesOff(
         cs, 
         xi, 
-        gConfiguration.Grid[0], 
-        -gConfiguration.EffectiveRadius[0]
+        gConfiguration.Grid[resID], 
+        -gConfiguration.EffectiveRadius[resID]
     );
     computeCoordinatesOff(
         ce, 
         xi, 
-        gConfiguration.Grid[0], 
-        gConfiguration.EffectiveRadius[0]
+        gConfiguration.Grid[resID], 
+        gConfiguration.EffectiveRadius[resID]
     );
     
     for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
@@ -992,7 +632,7 @@ __global__ void computeAccelerationsAndUpdateStatesLowD (
             for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
             {
                 unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[0]);
+                computeHash(hash, cc, gConfiguration.Grid[resID]);
                 unsigned int start = dCellStart[hash];
                 unsigned int end = dCellEnd[hash];
 
@@ -1008,56 +648,13 @@ __global__ void computeAccelerationsAndUpdateStatesLowD (
                     dVelocities,
                     start,
                     end,
-                    0
+                    resID
                 );
             }
         }
     }
 
-    // compute force contribution from the complement domain
-    computeCoordinatesOff(
-        cs, 
-        xi, 
-        gConfiguration.Grid[1], 
-        -gConfiguration.EffectiveRadius[1]
-    );
-    computeCoordinatesOff(
-        ce, 
-        xi, 
-        gConfiguration.Grid[1], 
-        gConfiguration.EffectiveRadius[1]
-    );
-    
-    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    {
-        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-        {
-            for (cc.x = cs.x; cc.x <= ce.x; cc.x++)
-            {
-                unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[1]);
-                unsigned int start = dCellStartHigh[hash];
-                unsigned int end = dCellEndHigh[hash];
 
-                computeAccelerationCellComplement(
-                    fi,
-                    rhoi,
-                    pi,
-                    xi,
-                    vi,
-                    dDensitiesHigh,
-                    dPressuresHigh,
-                    dPositionsHigh,
-                    dVelocitiesHigh,
-                    start,
-                    end,
-                    1
-                );
-            }
-        }
-    }
-
-    // compute force contribution from the boundary
     computeCoordinatesOff(
         cs, 
         xi, 
@@ -1096,202 +693,14 @@ __global__ void computeAccelerationsAndUpdateStatesLowD (
     dAccelerations[3*idx + 0] = fi.x/rhoi + bi.x;
     dAccelerations[3*idx + 1] = fi.y/rhoi - 9.81f + bi.y;
     dAccelerations[3*idx + 2] = fi.z/rhoi + bi.z;
-
-    // update states
-    //if (xi.x > 0.5f)
-    //{
-    //    dStates[idx] = PS_DELETE;
-    //}
 }
 //------------------------------------------------------------------------------
-__global__ void computeAccelerationsAndUpdateStatesHighD (
-    float* dAccelerations,
-    unsigned char* dStates,
-    const float* dDensities,              
-    const float* dPressures,
-    const float* dPositions,
-    const float* dVelocities,
-    const float* dDensitiesLow,              
-    const float* dPressuresLow,
-    const float* dPositionsLow,
-    const float* dVelocitiesLow,
-    const unsigned int* dCellStart,
-    const unsigned int* dCellEnd,
-    const unsigned int* dCellStartLow,
-    const unsigned int* dCellEndLow,
-    const float* dBoundaryPositions,
-    const unsigned int* dBoundaryCellStart,
-    const unsigned int* dBoundaryCellEnd,
-    unsigned int numParticles
-)
-{
-    unsigned int idx = blockDim.x*blockIdx.x + threadIdx.x;
-
-    if (idx >= numParticles)
-    {
-        return;
-    }
-
-    float3 xi;
-    xi.x = dPositions[3*idx + 0];
-    xi.y = dPositions[3*idx + 1];
-    xi.z = dPositions[3*idx + 2];
-    float3 vi;
-    vi.x = dVelocities[3*idx + 0];
-    vi.y = dVelocities[3*idx + 1];
-    vi.z = dVelocities[3*idx + 2];
-    float rhoi = dDensities[idx];
-    float pi = dPressures[idx];
-    float3 fi;
-    fi.x = 0.0;
-    fi.y = 0.0;
-    fi.z = 0.0;
-    float3 bi;
-    bi.x = 0.0f;
-    bi.y = 0.0f;
-    bi.z = 0.0f;
-    int3 cs, ce;
-    int3 cc;
-
-    // compute force contribution from the same domain
-    computeCoordinatesOff(
-        cs, 
-        xi, 
-        gConfiguration.Grid[1], 
-        -gConfiguration.EffectiveRadius[1]
-    );
-    computeCoordinatesOff(
-        ce, 
-        xi, 
-        gConfiguration.Grid[1], 
-        gConfiguration.EffectiveRadius[1]
-    );
-    
-    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    {
-        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-        {
-            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
-            {
-                unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[1]);
-                unsigned int start = dCellStart[hash];
-                unsigned int end = dCellEnd[hash];
-
-                computeAccelerationCell(
-                    fi,
-                    rhoi,
-                    pi,
-                    xi,
-                    vi,
-                    dDensities,
-                    dPressures,
-                    dPositions,
-                    dVelocities,
-                    start,
-                    end,
-                    1
-                );
-            }
-        }
-    }
-
-    // compute force contribution from the complement domain
-    //computeCoordinatesOff(
-    //    cs, 
-    //    xi, 
-    //    gConfiguration.Grid[0], 
-    //    -gConfiguration.EffectiveRadius[0]
-    //);
-    //computeCoordinatesOff(
-    //    ce, 
-    //    xi, 
-    //    gConfiguration.Grid[0], 
-    //    gConfiguration.EffectiveRadius[0]
-    //);
-    //
-    //for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    //{
-    //    for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-    //    {
-    //        for (cc.x = cs.x; cc.x <= ce.x; cc.x++)
-    //        {
-    //            unsigned int hash;
-    //            computeHash(hash, cc, gConfiguration.Grid[0]);
-    //            unsigned int start = dCellStartLow[hash];
-    //            unsigned int end = dCellEndLow[hash];
-
-    //            computeAccelerationCellComplement(
-    //                fi,
-    //                rhoi,
-    //                pi,
-    //                xi,
-    //                vi,
-    //                dDensitiesLow,
-    //                dPressuresLow,
-    //                dPositionsLow,
-    //                dVelocitiesLow,
-    //                start,
-    //                end,
-    //                0
-    //            );
-    //        }
-    //    }
-    //}
-
-    // compute force contribution from the boundary
-    computeCoordinatesOff(
-        cs, 
-        xi, 
-        gConfiguration.Grid[0], 
-        -gConfiguration.EffectiveRadius[0]
-    );
-    computeCoordinatesOff(
-        ce, 
-        xi, 
-        gConfiguration.Grid[0], 
-        gConfiguration.EffectiveRadius[0]
-    );
-
-    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
-    {
-        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
-        {
-            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
-            {
-                unsigned int hash;
-                computeHash(hash, cc, gConfiguration.Grid[0]);
-                unsigned int start = dBoundaryCellStart[hash];
-                unsigned int end = dBoundaryCellEnd[hash];
-                computeBoundaryForceCell(
-                    bi,
-                    xi,
-                    dBoundaryPositions,
-                    start,
-                    end,
-                    1
-                );
-            }
-        }
-    }
-
-    dAccelerations[3*idx + 0] = fi.x/rhoi + bi.x;
-    dAccelerations[3*idx + 1] = fi.y/rhoi - 9.81f + bi.y;
-    dAccelerations[3*idx + 2] = fi.z/rhoi + bi.z;
-}
-//------------------------------------------------------------------------------
-__global__ void updateSystemD (
+__global__ void integrateD (
     float* dPositions, 
     float* dVelocities, 
-    float* dBlendCoefficients,
-    unsigned char* dStates,
-    unsigned int* dActiveIDs,
-    unsigned int* dNumParticles,
+    float* dAccelerations,
     const float* dTempPositions,
     const float* dTempVelocities,
-    const float* dTempBlendCoefficients,
-    const unsigned char* dTempStates,
-    const float* dAccelerations,
     float timeStep,
     unsigned int numParticles
 )
@@ -1328,39 +737,17 @@ __global__ void updateSystemD (
     dVelocities[3*idx + 0] = vi.x;
     dVelocities[3*idx + 1] = vi.y;
     dVelocities[3*idx + 2] = vi.z;
-
-    // update blend values
-
-    // [c] is a mapping functions, since for default particles blendvalues
-    // should not be changed (i.e. 0 => 0.0f), for particles for deletion
-    // the blend values should be substracted by the blend increment 
-    // (i.e. 1 => -1.0), for particles marked for insertion blend values
-    // should be added by the blend increment (i.e. 2 => 1.0f)
-    const float c[] = {0.0f, -1.0f, 1.0f};
-
-    float blendVal = dTempBlendCoefficients[idx];
-    unsigned char state = dTempStates[idx];
-
-    blendVal += c[state]*gConfiguration.BlendIncrement;
-
-    dBlendCoefficients[idx] = blendVal;
-    dStates[idx] = state;
-
-    // if the blend value of the particle is greater than zero (i.e. it 
-    // contributes to the system) add it to the particle list for computations
-    // in the next time step. Otherwise, disregard the particle.
-    if (blendVal > 0.0f)
-    {
-        // (atomic) add one to the particle count
-        unsigned int old = atomicAdd(dNumParticles, 1);
-        dActiveIDs[old] = idx;
-    }
 }
 //------------------------------------------------------------------------------
 
 //==============================================================================
 //  HOST code starts here 
 //==============================================================================
+
+//------------------------------------------------------------------------------
+#define BLOCK_DIMENSIONS_X 256
+#define EMPTY_CELL_ID 0xFFFFFFFF
+//------------------------------------------------------------------------------
 
 //==============================================================================
 //  UTILITY functions start here
@@ -1408,33 +795,19 @@ Solver::SPHParticleData::SPHParticleData (
     // velocities and hash values for the particles and initialize that data.
     // also allocate memory for the neighbor search as described in the nVidia
     // particles white paper
+
     CUDA::Alloc<float>(&dDensities, data->MaxParticles);
     CUDA::Alloc<float>(&dPressures, data->MaxParticles);
     CUDA::Alloc<float>(&dAccelerations, 3*data->MaxParticles);
     CUDA::Alloc<float>(&dVelocities, 3*data->MaxParticles);
     CUDA::Alloc<float>(&dTempPositions, 3*data->MaxParticles);
     CUDA::Alloc<float>(&dTempVelocities, 3*data->MaxParticles);
-    CUDA::Alloc<float>(&dBlendCoefficients, data->MaxParticles);
-    CUDA::Alloc<float>(&dTempBlendCoefficients, data->MaxParticles);
-    CUDA::Alloc<unsigned char>(&dStates, data->MaxParticles);
-    CUDA::Alloc<unsigned char>(&dTempStates, data->MaxParticles);
-    CUDA::Alloc<unsigned int>(&dNumParticles, 1);
     CUDA::Fill<float>(dDensities, data->MaxParticles, 0.0f);
     CUDA::Fill<float>(dPressures, data->MaxParticles, 0.0f);
     CUDA::Fill<float>(dAccelerations, 3*data->MaxParticles, 0.0f);
     CUDA::Fill<float>(dVelocities, 3*data->MaxParticles, 0.0f);
     CUDA::Fill<float>(dTempPositions, 3*data->MaxParticles, 0.0f);
     CUDA::Fill<float>(dTempVelocities, 3*data->MaxParticles, 0.0f);
-    CUDA::Fill<float>(dBlendCoefficients, data->MaxParticles, 1.0f);
-    CUDA::Fill<float>(dTempBlendCoefficients, data->MaxParticles, 1.0f);
-    CUDA::Fill<unsigned char>(dStates, data->MaxParticles, PS_DEFAULT);
-    CUDA::Fill<unsigned char>(dTempStates, data->MaxParticles, PS_DEFAULT);
-    CUDA::Memcpy<unsigned int>(
-        dNumParticles, 
-        &Data->NumParticles, 
-        1, 
-        cudaMemcpyHostToDevice
-    );
     CUDA::Alloc<unsigned int>(&dActiveIDs, data->MaxParticles);
     CUDA::Alloc<unsigned int>(&dHashs, data->MaxParticles);
     CUDA::Alloc<unsigned int>(&dCellStart, numGridCells);
@@ -1462,10 +835,7 @@ Solver::SPHParticleData::~SPHParticleData ()
     CUDA::Free<float>(&dVelocities);
     CUDA::Free<float>(&dTempVelocities);
     CUDA::Free<float>(&dTempPositions);
-    CUDA::Free<float>(&dBlendCoefficients);
-    CUDA::Free<float>(&dTempBlendCoefficients);
-    CUDA::Free<unsigned char>(&dStates);
-    CUDA::Free<unsigned char>(&dTempStates);
+
     CUDA::Free<unsigned int>(&dHashs);
     CUDA::Free<unsigned int>(&dCellStart);
     CUDA::Free<unsigned int>(&dCellEnd);
@@ -1504,94 +874,97 @@ Solver::BoundaryParticleData::~BoundaryParticleData ()
 //==============================================================================
 
 //------------------------------------------------------------------------------
-Solver::Solver 
-(
+Solver::Solver (
     ParticleData* fluidData, 
     ParticleData* fluidDataHigh,
     ParticleData* boundaryData,
     const SolverConfiguration* configuration
 )
 : 
-    mConfiguration(*configuration), 
-    mFluidData(
-        fluidData, 
-        Grid::ComputeNumGridCells(configuration->Grid[0])
-    ), 
-    mFluidDataHigh(
-        fluidDataHigh, 
-        Grid::ComputeNumGridCells(configuration->Grid[1])
-    ), 
-    mBoundaryData(
-        boundaryData, 
-        Grid::ComputeNumGridCells(configuration->Grid[1])
-    )
+    mConfiguration(*configuration)
 {
     // store pointer to fluid particles and boundary particles also store
     // a copy of solver configuration
 
-    //--------------------------------------------------------------------------
+    mFluidData[0] = new SPHParticleData(
+            fluidData, 
+            Grid::ComputeNumGridCells(configuration->Grid[0])
+        );
+    mFluidData[1] = new SPHParticleData(
+            fluidDataHigh, 
+            Grid::ComputeNumGridCells(configuration->Grid[1])
+        );
+    mBoundaryData = new BoundaryParticleData(
+            boundaryData, 
+            Grid::ComputeNumGridCells(configuration->Grid[0])
+        );
+
     // compute neighborhood of boundary particles beforehand 
     unsigned int* dBoundaryIDs;
-    CUDA::Alloc<unsigned int>(&dBoundaryIDs, mBoundaryData.Data->MaxParticles);
-    CUDA::Fill<unsigned int>(dBoundaryIDs, mBoundaryData.Data->MaxParticles, 
+    CUDA::Alloc<unsigned int>(&dBoundaryIDs, mBoundaryData->Data->MaxParticles);
+    CUDA::Fill<unsigned int>(dBoundaryIDs, mBoundaryData->Data->MaxParticles, 
         0, 1);
 
     float* dBoundaryPositions;
-    CUDA::Alloc<float>(&dBoundaryPositions, 3*mBoundaryData.Data->MaxParticles);
+    CUDA::Alloc<float>(
+        &dBoundaryPositions, 
+        3*mBoundaryData->Data->MaxParticles
+    );
     
     this->Bind();   // bind first
-    mBoundaryData.Data->Map();
-    computeHashsLowD<<<mBoundaryData.GridDimensions, 
-        mBoundaryData.BlockDimensions>>>(
-        mBoundaryData.dHashs, 
+    mBoundaryData->Data->Map();
+    computeHashs<<<mBoundaryData->GridDimensions, 
+        mBoundaryData->BlockDimensions>>>(
+        mBoundaryData->dHashs, 
         dBoundaryIDs, 
-        mBoundaryData.Data->dPositions, 
-        mBoundaryData.Data->NumParticles
+        mBoundaryData->Data->dPositions,
+        mBoundaryData->Data->NumParticles,
+        0
     );
     thrust::sort_by_key(
-        thrust::device_ptr<unsigned int>(mBoundaryData.dHashs),
-        thrust::device_ptr<unsigned int>(mBoundaryData.dHashs + 
-            mBoundaryData.Data->NumParticles),
+        thrust::device_ptr<unsigned int>(mBoundaryData->dHashs),
+        thrust::device_ptr<unsigned int>(mBoundaryData->dHashs + 
+            mBoundaryData->Data->NumParticles),
         thrust::device_ptr<unsigned int>(dBoundaryIDs)
     );
     CUDA::Memset<unsigned int>(
-        mBoundaryData.dCellStart, 
+        mBoundaryData->dCellStart, 
         EMPTY_CELL_ID, 
-        mBoundaryData.NumGridCells
+        mBoundaryData->NumGridCells
     );
     CUDA::Memset<unsigned int>(
-        mBoundaryData.dCellEnd, 
+        mBoundaryData->dCellEnd, 
         EMPTY_CELL_ID, 
-        mBoundaryData.NumGridCells
+        mBoundaryData->NumGridCells
     );
-    reorderComputeCellStartEndBoundaryD<<<mBoundaryData.GridDimensions,
-        mBoundaryData.BlockDimensions, 
-        mBoundaryData.SharedMemSize>>>(
-        mBoundaryData.dCellStart,
-        mBoundaryData.dCellEnd,
+    reorderComputeCellStartEndBoundaryD<<<mBoundaryData->GridDimensions,
+        mBoundaryData->BlockDimensions, 
+        mBoundaryData->SharedMemSize>>>(
+        mBoundaryData->dCellStart,
+        mBoundaryData->dCellEnd,
         dBoundaryPositions,
-        mBoundaryData.Data->dPositions,
+        mBoundaryData->Data->dPositions,
         dBoundaryIDs,
-        mBoundaryData.dHashs,
-        mBoundaryData.Data->NumParticles 
+        mBoundaryData->dHashs,
+        mBoundaryData->Data->NumParticles 
     );
     CUDA::Memcpy<float>(
-        mBoundaryData.Data->dPositions, 
+        mBoundaryData->Data->dPositions, 
         dBoundaryPositions, 
-        3*mBoundaryData.Data->MaxParticles,
+        3*mBoundaryData->Data->MaxParticles,
         cudaMemcpyDeviceToDevice
     );
-    mBoundaryData.Data->Unmap();
+    mBoundaryData->Data->Unmap();
 
     CUDA::Free<unsigned int>(&dBoundaryIDs);
     CUDA::Free<float>(&dBoundaryPositions);
-    //--------------------------------------------------------------------------
-
 }
 //------------------------------------------------------------------------------
 Solver::~Solver ()
 {
-
+    delete mFluidData[0];
+    delete mFluidData[1];
+    delete mBoundaryData;
 }
 //------------------------------------------------------------------------------
 void Solver::Bind () const
@@ -1612,250 +985,114 @@ void Solver::Advance (float timeStep)
 {
     CUDA::Timer t;
     t.Start();
-    mFluidData.Data->Map();
-    mFluidDataHigh.Data->Map();
-    mBoundaryData.Data->Map();
-    this->computeNeighborhoodsLow();
-    this->computeNeighborhoodsHigh();
-    this->computeDensitiesLow();
-    this->computeDensitiesHigh();
-    //CUDA::DumpArray<float>(mFluidDataHigh.dDensities, mFluidData.Data->NumParticles);
-    this->computeAccelerationsAndUpdateStatesLow();
-    this->computeAccelerationsAndUpdateStatesHigh();
-    this->updateSystem(mFluidData, 0.0f);
-    this->updateSystem(mFluidDataHigh, timeStep);
-    mBoundaryData.Data->Unmap();
-    mFluidDataHigh.Data->Unmap();
-    mFluidData.Data->Unmap();
+    mFluidData[LOW_RES]->Data->Map();
+    mFluidData[HIGH_RES]->Data->Map();
+    mBoundaryData->Data->Map();
+    this->computeNeighborhoods(LOW_RES);
+    this->computeNeighborhoods(HIGH_RES);
+    this->computeDensities(LOW_RES);
+    this->computeDensities(HIGH_RES);
+    this->computeAccelerations(LOW_RES);
+    this->computeAccelerations(HIGH_RES);
+    this->integrate(LOW_RES, timeStep);
+    this->integrate(HIGH_RES, timeStep);
+    mBoundaryData->Data->Unmap();
+    mFluidData[HIGH_RES]->Data->Unmap();
+    mFluidData[LOW_RES]->Data->Unmap();
     t.Stop();
     t.DumpElapsed();
 }
 //------------------------------------------------------------------------------
-void Solver::computeNeighborhoodsLow ()
-{    
-    // copy back from device the new amount of particles for this time step
-    CUDA::Memcpy<unsigned int>(
-        &mFluidData.Data->NumParticles,
-        mFluidData.dNumParticles,
-        1,
-        cudaMemcpyDeviceToHost
-    );
-
+void Solver::computeNeighborhoods (unsigned char resID)
+{
+    
     // compute hashs of all particles
-    computeHashsLowD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
-        mFluidData.dHashs,
-        mFluidData.dActiveIDs,
-        mFluidData.Data->dPositions,
-        mFluidData.Data->NumParticles
+    computeHashs<<<mFluidData[resID]->GridDimensions,
+        mFluidData[resID]->BlockDimensions>>>(
+        mFluidData[resID]->dHashs,
+        mFluidData[resID]->dActiveIDs,
+        mFluidData[resID]->Data->dPositions,
+        mFluidData[resID]->Data->NumParticles,
+        resID
     );
         
     // sort the active particle ids by their hash
     thrust::sort_by_key(
-        thrust::device_ptr<unsigned int>(mFluidData.dHashs),
-        thrust::device_ptr<unsigned int>(mFluidData.dHashs + 
-            mFluidData.Data->NumParticles),
-        thrust::device_ptr<unsigned int>(mFluidData.dActiveIDs)
+        thrust::device_ptr<unsigned int>(mFluidData[resID]->dHashs),
+        thrust::device_ptr<unsigned int>(mFluidData[resID]->dHashs + 
+            mFluidData[resID]->Data->NumParticles),
+        thrust::device_ptr<unsigned int>(mFluidData[resID]->dActiveIDs)
     );
 
     // reset, then compute cell start end list
     CUDA::Memset<unsigned int>(
-        mFluidData.dCellStart, 
+        mFluidData[resID]->dCellStart, 
         EMPTY_CELL_ID, 
-        mFluidData.NumGridCells
+        mFluidData[resID]->NumGridCells
     );
     CUDA::Memset<unsigned int>(
-        mFluidData.dCellEnd, 
+        mFluidData[resID]->dCellEnd, 
         EMPTY_CELL_ID, 
-        mFluidData.NumGridCells
+        mFluidData[resID]->NumGridCells
     );
-    reorderAndComputeCellStartEndD<<<mFluidData.GridDimensions, 
-        mFluidData.BlockDimensions, mFluidData.SharedMemSize>>>(
-        mFluidData.dCellStart,
-        mFluidData.dCellEnd,
-        mFluidData.dTempPositions,
-        mFluidData.dTempVelocities,
-        mFluidData.dTempBlendCoefficients,
-        mFluidData.dTempStates,
-        mFluidData.dActiveIDs,
-        mFluidData.Data->dPositions,
-        mFluidData.dVelocities,
-        mFluidData.dBlendCoefficients,
-        mFluidData.dStates,
-        mFluidData.dHashs,
-        mFluidData.Data->NumParticles
-    );
-
-}
-//------------------------------------------------------------------------------
-void Solver::computeNeighborhoodsHigh ()
-{
-    // copy back from device the new amount of particles for this time step
-    CUDA::Memcpy<unsigned int>(
-        &mFluidDataHigh.Data->NumParticles,
-        mFluidDataHigh.dNumParticles,
-        1,
-        cudaMemcpyDeviceToHost
-    );
-
-    // compute hashs of all particles
-    computeHashsHighD<<<mFluidDataHigh.GridDimensions, 
-        mFluidDataHigh.BlockDimensions>>>(
-        mFluidDataHigh.dHashs,
-        mFluidDataHigh.dActiveIDs,
-        mFluidDataHigh.Data->dPositions,
-        mFluidDataHigh.Data->NumParticles
-    );
-        
-    // sort the active particle ids by their hash
-    thrust::sort_by_key(
-        thrust::device_ptr<unsigned int>(mFluidDataHigh.dHashs),
-        thrust::device_ptr<unsigned int>(mFluidDataHigh.dHashs + 
-            mFluidDataHigh.Data->NumParticles),
-        thrust::device_ptr<unsigned int>(mFluidDataHigh.dActiveIDs)
-    );
-
-    // reset, then compute cell start end list
-    CUDA::Memset<unsigned int>(
-        mFluidDataHigh.dCellStart, 
-        EMPTY_CELL_ID, 
-        mFluidDataHigh.NumGridCells
-    );
-    CUDA::Memset<unsigned int>(
-        mFluidDataHigh.dCellEnd, 
-        EMPTY_CELL_ID, 
-        mFluidDataHigh.NumGridCells
-    );
-    reorderAndComputeCellStartEndD<<<mFluidDataHigh.GridDimensions, 
-        mFluidDataHigh.BlockDimensions, mFluidDataHigh.SharedMemSize>>>(
-        mFluidDataHigh.dCellStart,
-        mFluidDataHigh.dCellEnd,
-        mFluidDataHigh.dTempPositions,
-        mFluidDataHigh.dTempVelocities,
-        mFluidDataHigh.dTempBlendCoefficients,
-        mFluidDataHigh.dTempStates,
-        mFluidDataHigh.dActiveIDs,
-        mFluidDataHigh.Data->dPositions,
-        mFluidDataHigh.dVelocities,
-        mFluidDataHigh.dBlendCoefficients,
-        mFluidDataHigh.dStates,
-        mFluidDataHigh.dHashs,
-        mFluidDataHigh.Data->NumParticles
+    reorderAndComputeCellStartEndD<<<mFluidData[resID]->GridDimensions, 
+        mFluidData[resID]->BlockDimensions, mFluidData[resID]->SharedMemSize>>>(
+        mFluidData[resID]->dCellStart,
+        mFluidData[resID]->dCellEnd,
+        mFluidData[resID]->dTempPositions,
+        mFluidData[resID]->dTempVelocities,
+        mFluidData[resID]->dActiveIDs,
+        mFluidData[resID]->Data->dPositions,
+        mFluidData[resID]->dVelocities,
+        mFluidData[resID]->dHashs,
+        mFluidData[resID]->Data->NumParticles
     );
 }
 //------------------------------------------------------------------------------
-void Solver::computeDensitiesLow ()
+void Solver::computeDensities (unsigned char resID)
 {
-    computeDensitiesPressuresLowD<<<mFluidData.GridDimensions, 
-        mFluidData.BlockDimensions>>>(
-        mFluidData.dDensities,
-        mFluidData.dPressures,
-        mFluidData.dTempPositions,
-        mFluidDataHigh.dTempPositions,
-        mFluidData.dCellStart,
-        mFluidData.dCellEnd,
-        mFluidDataHigh.dCellStart,
-        mFluidDataHigh.dCellEnd,
-        mFluidData.Data->NumParticles
+    computeDensitiesPressuresD<<<mFluidData[resID]->GridDimensions, 
+        mFluidData[resID]->BlockDimensions>>>(
+        mFluidData[resID]->dDensities,
+        mFluidData[resID]->dPressures,
+        mFluidData[resID]->dTempPositions,
+        mFluidData[resID]->dCellStart,
+        mFluidData[resID]->dCellEnd,
+        mFluidData[resID]->Data->NumParticles,
+        resID
     );
 }
 //------------------------------------------------------------------------------
-void Solver::computeDensitiesHigh ()
+void Solver::computeAccelerations (unsigned char resID)
 {
-    computeDensitiesPressuresHighD<<<mFluidDataHigh.GridDimensions, 
-        mFluidDataHigh.BlockDimensions>>>(
-        mFluidDataHigh.dDensities,
-        mFluidDataHigh.dPressures,
-        mFluidDataHigh.dTempPositions,
-        mFluidData.dTempPositions,
-        mFluidDataHigh.dCellStart,
-        mFluidDataHigh.dCellEnd,
-        mFluidData.dCellStart,
-        mFluidData.dCellEnd,
-        mFluidDataHigh.Data->NumParticles
+    computeAccelerationsD<<<mFluidData[resID]->GridDimensions, 
+        mFluidData[resID]->BlockDimensions>>>(
+        mFluidData[resID]->dAccelerations,
+        mFluidData[resID]->dDensities,
+        mFluidData[resID]->dPressures,
+        mFluidData[resID]->dTempPositions,
+        mFluidData[resID]->dTempVelocities,
+        mFluidData[resID]->dCellStart,
+        mFluidData[resID]->dCellEnd,
+        mBoundaryData->Data->dPositions,
+        mBoundaryData->dCellStart,
+        mBoundaryData->dCellEnd,
+        mFluidData[resID]->Data->NumParticles,
+        resID
     );
 }
 //------------------------------------------------------------------------------
-void Solver::computeAccelerationsAndUpdateStatesLow ()
+void Solver::integrate (unsigned char resID, float timeStep)
 {
-    // computes the accelerations
-
-    computeAccelerationsAndUpdateStatesLowD<<<mFluidData.GridDimensions, 
-        mFluidData.BlockDimensions>>>(
-        mFluidData.dAccelerations,
-        mFluidData.dTempStates,
-        mFluidData.dDensities,
-        mFluidData.dPressures,
-        mFluidData.dTempPositions,
-        mFluidData.dTempVelocities,
-        mFluidDataHigh.dDensities,
-        mFluidDataHigh.dPressures,
-        mFluidDataHigh.dTempPositions,
-        mFluidDataHigh.dTempVelocities,
-        mFluidData.dCellStart,
-        mFluidData.dCellEnd,
-        mFluidDataHigh.dCellStart,
-        mFluidDataHigh.dCellEnd,
-        mBoundaryData.Data->dPositions,
-        mBoundaryData.dCellStart,
-        mBoundaryData.dCellEnd,
-        mFluidData.Data->NumParticles
-    );
-}
-//------------------------------------------------------------------------------
-void Solver::computeAccelerationsAndUpdateStatesHigh ()
-{
-    computeAccelerationsAndUpdateStatesHighD<<<mFluidDataHigh.GridDimensions, 
-        mFluidDataHigh.BlockDimensions>>>(
-        mFluidDataHigh.dAccelerations,
-        mFluidDataHigh.dTempStates,
-        mFluidDataHigh.dDensities,
-        mFluidDataHigh.dPressures,
-        mFluidDataHigh.dTempPositions,
-        mFluidDataHigh.dTempVelocities,
-        mFluidData.dDensities,
-        mFluidData.dPressures,
-        mFluidData.dTempPositions,
-        mFluidData.dTempVelocities,
-        mFluidDataHigh.dCellStart,
-        mFluidDataHigh.dCellEnd,
-        mFluidData.dCellStart,
-        mFluidData.dCellEnd,
-        mBoundaryData.Data->dPositions,
-        mBoundaryData.dCellStart,
-        mBoundaryData.dCellEnd,
-        mFluidDataHigh.Data->NumParticles
-    );
-}
-//------------------------------------------------------------------------------
-void Solver::updateSystem (SPHParticleData& fluidData, float timeStep)
-{
-    // update:
-    //  - active particles positions and velocities
-    //  - active particles blendvalues according to their state
-    //  - the IDs list (i.e. don't add (remove) particles, that have a 
-    //    blend values of zero)
-
-
-    // first set the number of particles to zero, as the following CUDA kernel
-    // may delete particles from the system and counts the new amount of 
-    // particles 
-    CUDA::Memset<unsigned int>(fluidData.dNumParticles, 0, 1);
-
-    updateSystemD<<<fluidData.GridDimensions, 
-        fluidData.BlockDimensions>>>(
-        fluidData.Data->dPositions,
-        fluidData.dVelocities,
-        fluidData.dBlendCoefficients,
-        fluidData.dStates,
-        fluidData.dActiveIDs,
-        fluidData.dNumParticles,
-        fluidData.dTempPositions,
-        fluidData.dTempVelocities,
-        fluidData.dTempBlendCoefficients,
-        fluidData.dTempStates,
-        fluidData.dAccelerations,
+    integrateD<<<mFluidData[resID]->GridDimensions, 
+        mFluidData[resID]->BlockDimensions>>>(
+        mFluidData[resID]->Data->dPositions,
+        mFluidData[resID]->dVelocities,
+        mFluidData[resID]->dAccelerations,
+        mFluidData[resID]->dTempPositions,
+        mFluidData[resID]->dTempVelocities,
         timeStep,
-        fluidData.Data->NumParticles
+        mFluidData[resID]->Data->NumParticles
     );
 }
 //------------------------------------------------------------------------------

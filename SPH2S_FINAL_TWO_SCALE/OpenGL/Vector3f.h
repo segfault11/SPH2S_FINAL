@@ -24,7 +24,6 @@ public:
 	float Z() const {return mZ;};
 	
 	void operator*= (float s); 	
-	void operator+= (const GL::Vector3f& a);
 
 	void Dump () const;
 
@@ -33,8 +32,6 @@ public:
 	static void ComputeDotProduct (float& res, const Vector3f& a, 
 		const Vector3f& b);
 	static void Substract (Vector3f& res, const Vector3f& a, 
-		const Vector3f& b);
-	static void Add (Vector3f& res, const Vector3f& a, 
 		const Vector3f& b);
     static float ComputeNorm (const Vector3f& a);
 

@@ -15,8 +15,8 @@ public:
 	~Camera ();
 
 	void Rotate (float upAngle, float vAngle);
+
     void RotateAroundFocus (float dAngX, float dAngY, float dAngZ); 
-    void Zoom (float dist);
 
 	static void ComputeViewMatrix (float* mat, const Camera& camera);
 	static void ComputeProjectionMatrix (float* mat, const Camera& camera);

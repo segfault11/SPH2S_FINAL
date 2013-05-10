@@ -48,9 +48,9 @@ void main ()
 
     oFragColor = vec4(color, 1.0f);
 
-    // compute z value of the fragment in NDC space
-    float z = -uProjMat[2][2] - uProjMat[2][3]/posView.z;
 
-    gl_FragDepth = 0.5*(z + 1.0f);
+    vec4 posClip = uProjMat*posView;
+
+    gl_FragDepth = posClip.z/posClip.w;
 }
 //------------------------------------------------------------------------------

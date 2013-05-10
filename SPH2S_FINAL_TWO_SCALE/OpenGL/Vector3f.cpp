@@ -67,30 +67,11 @@ void GL::Vector3f::Substract
 	res.mZ = a.mZ - b.mZ;
 }
 //-----------------------------------------------------------------------------
-void GL::Vector3f::Add
-(
-	Vector3f& res, 
-	const Vector3f& a, 
-	const Vector3f& b
-)
-{
-	res.mX = a.mX + b.mX;
-	res.mY = a.mY + b.mY;
-	res.mZ = a.mZ + b.mZ;
-}
-//-----------------------------------------------------------------------------
 void GL::Vector3f::operator*= (float s)
 {
 	mX *= s;
 	mY *= s;
 	mZ *= s;
-}
-//-----------------------------------------------------------------------------
-void GL::Vector3f::operator+= (const GL::Vector3f& a)
-{
-	mX += a.mX;
-	mY += a.mY;
-	mZ += a.mZ;
 }
 //-----------------------------------------------------------------------------
 void GL::Vector3f::Dump () const

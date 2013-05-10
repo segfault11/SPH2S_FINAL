@@ -61,14 +61,6 @@ void GL::Camera::RotateAroundFocus (float angX, float dAngY, float angZ)
     this->reconfigure();
 }
 //-----------------------------------------------------------------------------
-void GL::Camera::Zoom (float dDist)
-{
-    GL::Vector3f dir(mDir);
-    dir *= dDist;
-    mPosition += dir;
-    this->reconfigure();
-}
-//-----------------------------------------------------------------------------
 void GL::Camera::ComputeViewMatrix (float *mat, const Camera& camera)
 {
 	mat[0] = camera.mV.X();
