@@ -129,7 +129,7 @@ void initSim ()
     Grid particleGrid = Grid::MakeGrid(
             make_float3(0.04f, 0.04f, 0.01f),
             make_float3(0.35f, 0.751f, 0.39f),
-            0.015f
+            0.0075f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
     //--------------------------------------------------------------------------
@@ -139,7 +139,7 @@ void initSim ()
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, 0.0f),
             make_float3(2.0f, 1.5f, 0.4f),
-            0.015f
+            0.0075f
         );
     gsBoundaryParticles = ParticleData::CreateParticleBoxCanvas(
         boundaryGrid, 

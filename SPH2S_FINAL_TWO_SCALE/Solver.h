@@ -28,17 +28,19 @@ struct SolverConfiguration
     {
         SolverConfiguration config;
 
-        config.EffectiveRadius = std::powf(
+        config.EffectiveRadius[0] = std::powf(
                 0.75f*volume*static_cast<float>(avgParticles)/
                 (M_PI*static_cast<float>(numParticles)), 
                 1.0f/3.0f
             ); 
-        config.FluidParticleMass = restDensity*volume/
+        config.EffectiveRadius[1] = config.EffectiveRadius[0]/2.0f;
+        config.FluidParticleMass[0] = restDensity*volume/
             static_cast<float>(numParticles);
-
-        config.BoundaryParticleMass = config.FluidParticleMass;
+        config.FluidParticleMass[1] = config.FluidParticleMass[0]/8.0f;
+        config.BoundaryParticleMass = config.FluidParticleMass[0];
         config.RestDensity = restDensity;
-        config.Grid = Grid::MakeGrid(origin, end, config.EffectiveRadius);
+        config.Grid[0] = Grid::MakeGrid(origin, end, config.EffectiveRadius[0]);
+        config.Grid[1] = Grid::MakeGrid(origin, end, config.EffectiveRadius[1]);
         config.BulkModulus = bulkModulus;
         config.Viscosity = viscosity;
         config.SpeedSound = speedSound;
@@ -47,8 +49,8 @@ struct SolverConfiguration
         return config;
     };
 
-    float EffectiveRadius;
-    float FluidParticleMass;
+    float EffectiveRadius[2];
+    float FluidParticleMass[2];
     float BoundaryParticleMass;
     float RestDensity;
     float BulkModulus;
@@ -56,7 +58,7 @@ struct SolverConfiguration
     float SpeedSound;
     float TensionCoefficient;
     float BlendIncrement;
-    ::Grid Grid;                // simulation grid
+    ::Grid Grid[2];                // simulation grid
 };
 //------------------------------------------------------------------------------
 class Solver 
@@ -120,6 +122,7 @@ class Solver
 public:
     Solver(
         ParticleData* fluidData, 
+        ParticleData* fluidDataHigh,
         ParticleData* boundaryData,
         const SolverConfiguration* configuration
     );
@@ -129,13 +132,17 @@ public:
     void Advance (float dt);
 
 private:
-    inline void computeNeighborhoods ();
-    inline void computeDensities ();
-    inline void computeAccelerationsAndUpdateStates ();
-    inline void updateSystem (float timeStep);
+    inline void computeNeighborhoodsLow ();
+    inline void computeNeighborhoodsHigh ();
+    inline void computeDensitiesLow ();
+    inline void computeDensitiesHigh ();
+    inline void computeAccelerationsAndUpdateStatesLow ();
+    inline void computeAccelerationsAndUpdateStatesHigh ();
+    inline void updateSystem (SPHParticleData& fluidData, float timeStep);
 
     SolverConfiguration mConfiguration;
     SPHParticleData mFluidData;
+    SPHParticleData mFluidDataHigh;
     BoundaryParticleData mBoundaryData;
 };
 //------------------------------------------------------------------------------

@@ -16,9 +16,11 @@
 #define HEIGHT 768
 //------------------------------------------------------------------------------
 ParticleData* gsParticleData;
+ParticleData* gsParticleDataHigh;
 ParticleData* gsBoundaryParticles;
 GL::Camera* gsCamera;
 Renderer* gsRenderer;
+Renderer* gsRendererHigh;
 Renderer* gsBoundaryRenderer;
 BoxRenderer* gsBoxRenderer;
 Solver* gsSolver;
@@ -60,9 +62,11 @@ int main (int argc, char* argv[])
 void display () 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gsSolver->Advance(0.0018f);
+    gsSolver->Advance(0.0005f);
     gsRenderer->SetCamera(*gsCamera);
     gsRenderer->Render();
+    gsRendererHigh->SetCamera(*gsCamera);
+    gsRendererHigh->Render();
     gsBoxRenderer->SetCamera(*gsCamera);
     gsBoxRenderer->Render();
     glFlush();
@@ -146,13 +150,20 @@ void initSim ()
             0.015f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
+
+    Grid particleGridHigh = Grid::MakeGrid(
+            make_float3(1.00f, 0.04f, 1.00f),
+            make_float3(1.49f, 0.751f, 1.49f),
+            0.0075f
+        );
+    gsParticleDataHigh = ParticleData::CreateParticleBox(particleGridHigh);
     //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
     // init boundary particles
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, 0.0f),
-            make_float3(2.0f, 1.5f, 0.4f),
+            make_float3(1.5f, 1.5f, 1.5f),
             0.015f
         );
     gsBoundaryParticles = ParticleData::CreateParticleBoxCanvas(
@@ -164,8 +175,8 @@ void initSim ()
     //--------------------------------------------------------------------------
     //  init camera
     gsCamera = new GL::Camera(
-        GL::Vector3f(1.0f, 0.75f, 2.0f),
-        GL::Vector3f(1.0f, 0.75f, 0.2f),
+        GL::Vector3f(0.75f, 0.75f, 2.5f),
+        GL::Vector3f(0.75f, 0.75f, 0.75f),
         GL::Vector3f(0.0f, 1.0f, 0.0f),
         static_cast<float>(WIDTH)/static_cast<float>(HEIGHT),
         60.0f,
@@ -183,14 +194,23 @@ void initSim ()
             0.1f,
             0.017f
         );
+    RendererConfig rendererConfigHigh(
+            make_float3(1.0f, 1.0f, 1.0f),
+            0.5f,
+            0.5f,
+            0.1f,
+            0.0085f
+        );
 
     gsRenderer = new Renderer(gsParticleData, rendererConfig);
     gsRenderer->SetCamera(*gsCamera);
+    gsRendererHigh = new Renderer(gsParticleDataHigh, rendererConfigHigh);
+    gsRendererHigh->SetCamera(*gsCamera);
     gsBoundaryRenderer = new Renderer(gsBoundaryParticles, rendererConfig);
     gsBoundaryRenderer->SetCamera(*gsCamera);
     gsBoxRenderer = new BoxRenderer(
             make_float3(0.0f, 0.0f, 0.0f),
-            make_float3(2.0f, 1.6f, 0.4f)
+            make_float3(1.5f, 1.5f, 1.5f)
         );
     gsBoxRenderer->SetCamera(*gsCamera);
     //--------------------------------------------------------------------------
@@ -201,7 +221,7 @@ void initSim ()
     // fill out solver's configuration
     SolverConfiguration config = SolverConfiguration::MakeConfiguration(
             make_float3(-0.1f, -0.1f, -0.1f),
-            make_float3(2.1f, 1.4f, 0.5f),
+            make_float3(1.6f, 1.6f, 1.6f),
             Grid::ComputeVolume(particleGrid),
             gsParticleData->MaxParticles,
             35,                      // avg. particle neighbors
@@ -215,7 +235,12 @@ void initSim ()
     std::cout << std::powf(3.0f/4.0f*Grid::ComputeVolume(particleGrid)/gsParticleData->MaxParticles*1.0f/M_PI, 1.0f/3.0f) << std::endl;
 
     // create solver and set it active
-    gsSolver = new Solver(gsParticleData, gsBoundaryParticles, &config); 
+    gsSolver = new Solver(
+            gsParticleData, 
+            gsParticleDataHigh, 
+            gsBoundaryParticles, 
+            &config
+        ); 
     gsSolver->Bind();
     //--------------------------------------------------------------------------
 }
@@ -223,9 +248,11 @@ void initSim ()
 void tearDownSim ()
 {
     delete gsParticleData;
+    delete gsParticleDataHigh;
     delete gsBoundaryParticles;
     delete gsCamera;
     delete gsRenderer;
+    delete gsRendererHigh;
     delete gsSolver;
 }
 //------------------------------------------------------------------------------
