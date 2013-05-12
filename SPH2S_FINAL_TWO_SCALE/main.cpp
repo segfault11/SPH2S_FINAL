@@ -137,8 +137,8 @@ void initSim ()
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
     Grid particleGridHigh = Grid::MakeGrid(
-            make_float3(1.7f, 0.04f, 0.01f),
-            make_float3(1.95f, 0.751f, 0.35f),
+            make_float3(0.3f, 0.04f, 0.01f),
+            make_float3(0.6f, 0.751f, 0.35f),
             0.0075f
         );
     gsParticleDataHigh = ParticleData::CreateParticleBox(particleGridHigh);
@@ -177,7 +177,7 @@ void initSim ()
             0.1f,
             0.5f,
             0.5f,
-            0.017f
+            0.0085f
         );
     gsRenderer = new Renderer(gsParticleData, rendererConfig);
     gsRenderer->SetCamera(*gsCamera);
@@ -189,7 +189,7 @@ void initSim ()
             0.1f,
             0.5f,
             0.5f,
-            0.0085f
+            0.00425f
         );    
     gsRendererHigh = new Renderer(gsParticleDataHigh, rendererConfigHigh);
     

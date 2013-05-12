@@ -343,7 +343,56 @@ __device__ void computeBoundaryForceCell (
     }
 }
 //------------------------------------------------------------------------------
+__device__ void computeVelXSPHCell(
+    float3& velXSPH,
+    const float3& xi,
+    const float3& vi,
+    const float* dPositions,
+    const float* dVelocities,
+    const float* dAccelerations,
+    const float* dDensities,
+    unsigned int start,
+    unsigned int end,
+    float dt
+)
+{
+    for (unsigned int j = start; j < end; j++)
+    {
+        float3 xj;
+        xj.x = dPositions[3*j + 0];
+        xj.y = dPositions[3*j + 1];
+        xj.z = dPositions[3*j + 2];
+        float3 aj;
+        aj.x = dAccelerations[3*j + 0];
+        aj.y = dAccelerations[3*j + 1];
+        aj.z = dAccelerations[3*j + 2];
+        float3 vj;
+        vj.x = dVelocities[3*j + 0] + dt*aj.x;
+        vj.y = dVelocities[3*j + 1] + dt*aj.y;
+        vj.z = dVelocities[3*j + 2] + dt*aj.z;
+        float rhoj = dDensities[j];
+        float dist;
+        float3 xij;
+        xij.x = xi.x - xj.x; 
+        xij.y = xi.y - xj.y; 
+        xij.z = xi.z - xj.z; 
+        computeNorm(dist, xij);
 
+        if ( dist < gConfiguration.EffectiveRadius)
+        {
+            float3 vji;
+            vji.x = vj.x - vi.x;
+            vji.y = vj.y - vi.y;
+            vji.z = vj.z - vi.z;
+            float weight;
+            evaluatePoly6Kernel(weight, dist, gConfiguration.EffectiveRadius);
+            weight *= (gConfiguration.FluidParticleMass/rhoj);
+            velXSPH.x += vji.x*weight;
+            velXSPH.y += vji.y*weight;
+            velXSPH.z += vji.z*weight;
+        }
+    }
+}
 //==============================================================================
 // GLOBAL device kernel definitions
 //==============================================================================
@@ -664,7 +713,7 @@ __global__ void computeAccelerationsD (
 __global__ void integrateD (
     float* dPositions, 
     float* dVelocities, 
-    float* dAccelerations,
+    const float* dAccelerations,
     const float* dTempPositions,
     const float* dTempVelocities,
     float timeStep,
@@ -691,6 +740,104 @@ __global__ void integrateD (
     vi.x += timeStep*dAccelerations[3*idx + 0]; 
     vi.y += timeStep*dAccelerations[3*idx + 1]; 
     vi.z += timeStep*dAccelerations[3*idx + 2]; 
+    xi.x += timeStep*vi.x;
+    xi.y += timeStep*vi.y;
+    xi.z += timeStep*vi.z;
+
+    // store new position and velocity of the particle
+    dPositions[3*idx + 0] = xi.x;
+    dPositions[3*idx + 1] = xi.y;
+    dPositions[3*idx + 2] = xi.z;
+
+    dVelocities[3*idx + 0] = vi.x;
+    dVelocities[3*idx + 1] = vi.y;
+    dVelocities[3*idx + 2] = vi.z;
+}
+//------------------------------------------------------------------------------
+__global__ void integrateXSPHD (
+    float* dPositions, 
+    float* dVelocities, 
+    const float* dTempPositions,
+    const float* dTempVelocities,
+    const float* dAccelerations,
+    const float* dDensities,
+    const unsigned int* dCellStart,
+    const unsigned int* dCellEnd,
+    float timeStep,
+    unsigned int numParticles
+)
+{
+    unsigned int idx = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if (idx >= numParticles)
+    {
+        return;
+    }
+
+    float3 xi;
+    xi.x = dTempPositions[3*idx + 0];
+    xi.y = dTempPositions[3*idx + 1];
+    xi.z = dTempPositions[3*idx + 2];
+    float3 vi;
+    vi.x = dTempVelocities[3*idx + 0];
+    vi.y = dTempVelocities[3*idx + 1];
+    vi.z = dTempVelocities[3*idx + 2];
+    
+    vi.x += timeStep*dAccelerations[3*idx + 0]; 
+    vi.y += timeStep*dAccelerations[3*idx + 1]; 
+    vi.z += timeStep*dAccelerations[3*idx + 2]; 
+
+    float3 velXSPH;
+    velXSPH.x = 0.0f;
+    velXSPH.y = 0.0f;
+    velXSPH.z = 0.0f;
+
+    // compute XPSH velocity
+    int3 cs, ce, cc;
+    computeCoordinatesOff(
+        cs, 
+        xi, 
+        gConfiguration.Grid, 
+        -gConfiguration.EffectiveRadius
+    );
+    computeCoordinatesOff(
+        ce, 
+        xi, 
+        gConfiguration.Grid, 
+        gConfiguration.EffectiveRadius
+    );
+
+    for (cc.z = cs.z; cc.z <= ce.z; cc.z++)
+    {
+        for (cc.y = cs.y; cc.y <= ce.y; cc.y++)
+        {
+            for (cc.x  = cs.x; cc.x <= ce.x; cc.x++)
+            {
+                unsigned int hash;
+                computeHash(hash, cc, gConfiguration.Grid);
+                unsigned int start = dCellStart[hash];
+                unsigned int end = dCellEnd[hash];
+
+                computeVelXSPHCell(
+                    velXSPH,
+                    xi,
+                    vi,
+                    dTempPositions,
+                    dTempVelocities,
+                    dAccelerations,
+                    dDensities,
+                    start,
+                    end,
+                    timeStep
+                );
+            }
+        }
+    }
+
+    vi.x += gConfiguration.XSPHCoeff*velXSPH.x;
+    vi.y += gConfiguration.XSPHCoeff*velXSPH.x;
+    vi.z += gConfiguration.XSPHCoeff*velXSPH.x;
+
     xi.x += timeStep*vi.x;
     xi.y += timeStep*vi.y;
     xi.z += timeStep*vi.z;
@@ -801,7 +948,6 @@ Solver::SPHParticleData::~SPHParticleData ()
     CUDA::Free<float>(&dVelocities);
     CUDA::Free<float>(&dTempVelocities);
     CUDA::Free<float>(&dTempPositions);
-
     CUDA::Free<unsigned int>(&dHashs);
     CUDA::Free<unsigned int>(&dCellStart);
     CUDA::Free<unsigned int>(&dCellEnd);
@@ -1026,14 +1172,28 @@ void Solver::computeAccelerations ()
 //------------------------------------------------------------------------------
 void Solver::integrate (float timeStep)
 {
-    integrateD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
+    //integrateD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
+    //    mFluidData.Data->dPositions,
+    //    mFluidData.dVelocities,
+    //    mFluidData.dAccelerations,
+    //    mFluidData.dTempPositions,
+    //    mFluidData.dTempVelocities,
+    //    timeStep,
+    //    mFluidData.Data->NumParticles
+    //);
+
+    integrateXSPHD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
         mFluidData.Data->dPositions,
         mFluidData.dVelocities,
-        mFluidData.dAccelerations,
         mFluidData.dTempPositions,
         mFluidData.dTempVelocities,
+        mFluidData.dAccelerations,
+        mFluidData.dDensities,
+        mFluidData.dCellStart,
+        mFluidData.dCellEnd,
         timeStep,
         mFluidData.Data->NumParticles
     );
+
 }
 //------------------------------------------------------------------------------

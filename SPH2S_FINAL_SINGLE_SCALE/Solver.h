@@ -22,7 +22,8 @@ struct SolverConfiguration
         float bulkModulus,
         float viscosity,
         float speedSound,
-        float tensionCoefficient
+        float tensionCoefficient,
+        float epsilon
     )
     {
         SolverConfiguration config;
@@ -42,6 +43,7 @@ struct SolverConfiguration
         config.Viscosity = viscosity;
         config.SpeedSound = speedSound;
         config.TensionCoefficient = tensionCoefficient;
+        config.XSPHCoeff = epsilon;
         return config;
     };
 
@@ -53,6 +55,7 @@ struct SolverConfiguration
     float Viscosity;
     float SpeedSound;
     float TensionCoefficient;
+    float XSPHCoeff;
     ::Grid Grid;                // simulation grid
 };
 //------------------------------------------------------------------------------

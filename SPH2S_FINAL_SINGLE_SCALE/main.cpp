@@ -195,7 +195,8 @@ void initSim ()
             30.0f,                   // bulk modulus
             5.0f,                    // viscosity
             88.1472f,                // speed of sound in fluid
-            0.8f                     // tension coefficient
+            0.8f,                    // tension coefficient
+            0.05f
         );
     std::cout << std::powf(3.0f/4.0f*Grid::ComputeVolume(particleGrid)/gsParticleData->MaxParticles*1.0f/M_PI, 1.0f/3.0f) << std::endl;
 
