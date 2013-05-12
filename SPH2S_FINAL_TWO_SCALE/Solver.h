@@ -22,7 +22,8 @@ struct SolverConfiguration
         float bulkModulus,
         float viscosity,
         float speedSound,
-        float tensionCoefficient
+        float tensionCoefficient,
+        float blendIncrement
     )
     {
         SolverConfiguration config;
@@ -43,6 +44,7 @@ struct SolverConfiguration
         config.Viscosity = viscosity;
         config.SpeedSound = speedSound;
         config.TensionCoefficient = tensionCoefficient;
+        config.BlendIncrement = blendIncrement;
         return config;
     };
 
@@ -54,6 +56,7 @@ struct SolverConfiguration
     float Viscosity;
     float SpeedSound;
     float TensionCoefficient;
+    float BlendIncrement;
     ::Grid Grid[2];                // simulation grid
 };
 //------------------------------------------------------------------------------
@@ -82,6 +85,13 @@ class Solver
         unsigned int* dCellEnd;
         unsigned int NumGridCells;
 
+        unsigned char* dStates;
+        unsigned char* dTempStates;
+        float* dBlendCoefficients;
+        float* dTempBlendCoefficients;
+
+        unsigned int* dNumParticles;
+
         // cuda kernel information
         dim3 BlockDimensions;
         dim3 GridDimensions;
@@ -93,9 +103,9 @@ class Solver
     public:
         BoundaryParticleData(ParticleData* data, unsigned int numGridCells);
         ~BoundaryParticleData();
-        
+
         ::ParticleData* Data;
-            
+
         unsigned int* dHashs;
         unsigned int* dCellStart;
         unsigned int* dCellEnd;

@@ -130,6 +130,8 @@ void initSim ()
 {
     //--------------------------------------------------------------------------
     //  init particle data
+    //--------------------------------------------------------------------------
+    
     Grid particleGrid = Grid::MakeGrid(
             make_float3(0.04f, 0.04f, 0.01f),
             make_float3(0.25f, 0.751f, 0.39f),
@@ -142,10 +144,12 @@ void initSim ()
             0.0075f
         );
     gsParticleDataHigh = ParticleData::CreateParticleBox(particleGridHigh);
-    //--------------------------------------------------------------------------
-
+    gsParticleDataHigh->NumParticles = 0;
+    
     //--------------------------------------------------------------------------
     // init boundary particles
+    //--------------------------------------------------------------------------
+
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, -0.1f),
             make_float3(2.0f, 1.5f, 0.5f),
@@ -155,10 +159,11 @@ void initSim ()
             boundaryGrid, 
             5
         );
-    //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
     //  init camera
+    //--------------------------------------------------------------------------
+
     gsCamera = new GL::Camera(
         GL::Vector3f(1.0f, 0.75f, 2.0f),
         GL::Vector3f(1.0f, 0.75f, 0.2f),
@@ -168,9 +173,11 @@ void initSim ()
         0.1f,
         10.0f
     );
+
+    //--------------------------------------------------------------------------
+    //  init Renderer
     //--------------------------------------------------------------------------
 
-    //  init Renderer
     RendererConfig rendererConfig(
             make_float3(0.0f, 0.5f, 1.0f),
             make_float3(1.0f, 1.0f, 1.0f),
@@ -182,7 +189,7 @@ void initSim ()
     gsRenderer = new Renderer(gsParticleData, rendererConfig);
     gsRenderer->SetCamera(*gsCamera);
     
-    // init highres particle rendere
+    // init highres particle renderer
     RendererConfig rendererConfigHigh(
             make_float3(1.0f, 0.5f, 0.0f),
             make_float3(1.0f, 1.0f, 1.0f),
@@ -213,7 +220,8 @@ void initSim ()
             30.0f,                   // bulk modulus
             5.0f,                    // viscosity
             88.1472f,                // speed of sound in fluid
-            0.8f                     // tension coefficient
+            0.8f,                    // tension coefficient
+            0.05f
         );
     std::cout << std::powf(3.0f/4.0f*Grid::ComputeVolume(particleGrid)/gsParticleData->MaxParticles*1.0f/M_PI, 1.0f/3.0f) << std::endl;
 

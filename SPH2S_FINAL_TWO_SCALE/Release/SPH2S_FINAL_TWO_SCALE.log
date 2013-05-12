@@ -1,20 +1,26 @@
-﻿Build started 5/11/2013 1:27:07 PM.
+﻿Build started 5/12/2013 9:35:35 PM.
      1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SPH2S_FINAL_TWO_SCALE.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Creating "Release\SPH2S_FINAL_TWO_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
+         Touching "Release\SPH2S_FINAL_TWO_SCALE.unsuccessfulbuild".
        AddCudaCompileDeps:
-       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /D_MBCS /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu 
        AddCudaCompilePropsDeps:
        Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
        CudaBuild:
-       Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
+         Compiling CUDA source file Solver.cu...
+         cmd.exe /C "C:\Users\Arno\AppData\Local\Temp\2741c623a9f1410f90737a81917370de.cmd"
+         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\Solver.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu"
+         
+         C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\Solver.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu" 
+         Solver.cu
+         tmpxft_00000928_00000000-2_Solver.cudafe1.gpu
+         tmpxft_00000928_00000000-7_Solver.cudafe2.gpu
+         Solver.cu
+         tmpxft_00000928_00000000-2_Solver.cudafe1.cpp
+         tmpxft_00000928_00000000-12_Solver.ii
+     1>c:\users\arno\documents\projects\sph2s_final\sph2s_final_two_scale\Solver.h(30): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
        ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
-         main.cpp
-     1>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include\thrust/system/detail/error_category.inl(102): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(157) : see declaration of 'strerror'
-     1>c:\users\arno\documents\projects\sph2s_final\sph2s_final_two_scale\Solver.h(33): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-     1>main.cpp(218): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+         All outputs are up-to-date.
        ManifestResourceCompile:
          All outputs are up-to-date.
        Link:
@@ -52,4 +58,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.67
+Time Elapsed 00:00:20.36
