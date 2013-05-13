@@ -514,6 +514,51 @@ __device__ void computeBoundaryForceCell(
     }
 }
 //------------------------------------------------------------------------------
+#define SQRT3INV 0.57735026919
+__device__ void insertHighResParticles(
+    float* dPositions,              // positions of the high res particles
+    float* dVelocities,             // velocities of the high res particles
+    float* dBlendCoefficients,      // blend vals of the high res particles
+    unsigned char* dStates,         // states of the high res particles
+    unsigned int* dActiveIDs,       // list of active high particle ids
+    unsigned int* dNumParticles,    // # particles in the list
+    const float3& posLow,           // position of the particle that is split
+    const float3& velLow,           // velocity of the particle that is split
+    float densLow                   // density of the particle that is split
+)
+{
+    const float dir[] = {
+         SQRT3INV,  SQRT3INV,  SQRT3INV,
+         SQRT3INV,  SQRT3INV, -SQRT3INV,
+         SQRT3INV, -SQRT3INV,  SQRT3INV,
+         SQRT3INV, -SQRT3INV, -SQRT3INV,
+        -SQRT3INV,  SQRT3INV,  SQRT3INV,
+        -SQRT3INV,  SQRT3INV, -SQRT3INV,
+        -SQRT3INV, -SQRT3INV,  SQRT3INV,
+        -SQRT3INV, -SQRT3INV, -SQRT3INV
+    };
+    
+    // add eight to the high res particles
+    unsigned int id = atomicAdd(dNumParticles, 8);
+    float r = pow(
+            3.0f/(4.0f*float(M_PI))*
+            gConfiguration.FluidParticleMass[LOW_RES]/densLow,
+            1.0f/3.0f
+        );
+    for (unsigned int i = 0; i < 8; i++)
+    {
+        dActiveIDs[id + i] = id;
+        dBlendCoefficients[id + i] = 0.0f;
+        dStates[id + i] = 2;
+        dPositions[3*(id + i) + 0] = posLow.x + r*dir[3*i + 0];
+        dPositions[3*(id + i) + 1] = posLow.y + r*dir[3*i + 1];
+        dPositions[3*(id + i) + 2] = posLow.z + r*dir[3*i + 2];
+        dVelocities[3*(id + i) + 0] = velLow.x;
+        dVelocities[3*(id + i) + 1] = velLow.y;
+        dVelocities[3*(id + i) + 2] = velLow.z;
+    }
+}
+//------------------------------------------------------------------------------
 
 //==============================================================================
 // GLOBAL device kernel definitions
@@ -666,6 +711,7 @@ __global__ void computeDensitiesPressuresD(
     const unsigned int* dCellStart,
     const unsigned int* dCellEnd,
     const float* dPositionsCompl,
+    const float* dBlendCoefficientsCompl,
     const unsigned int* dCellStartCompl,
     const unsigned int* dCellEndCompl,
     unsigned int numParticles,
@@ -724,7 +770,10 @@ __global__ void computeDensitiesPressuresD(
         }
     }
 
+    //--------------------------------------------------------------------------
     // compute density contribution of the complementary domain
+    //--------------------------------------------------------------------------
+
     computeCoordinatesOff(
         cs, 
         xi, 
@@ -752,8 +801,8 @@ __global__ void computeDensitiesPressuresD(
                 computeDensityCellCompl(
                     rhoiCompl,
                     xi,
-                    dBlendCoefficients,
-                    dPositions,
+                    dPositionsCompl,
+                    dBlendCoefficientsCompl,
                     start,
                     end
                 );
@@ -776,12 +825,14 @@ __global__ void computeAccelerationsD(
     const float* dPositions,
     const float* dVelocities,
     const float* dBlendCoefficients,
+    unsigned char* dStates,
     const unsigned int* dCellStart,
     const unsigned int* dCellEnd,
     const float* dDensitiesCompl,              
     const float* dPressuresCompl,
     const float* dPositionsCompl,
     const float* dVelocitiesCompl,
+    const float* dBlendCoefficientsCompl,
     const unsigned int* dCellStartCompl,
     const unsigned int* dCellEndCompl,
     const float* dBoundaryPositions,
@@ -861,7 +912,10 @@ __global__ void computeAccelerationsD(
         }
     }
 
+    //--------------------------------------------------------------------------
     // compute force contribution of the complementary domain
+    //--------------------------------------------------------------------------
+    
     computeCoordinatesOff(
         cs, 
         xi, 
@@ -896,7 +950,7 @@ __global__ void computeAccelerationsD(
                     dPressuresCompl,
                     dPositionsCompl,
                     dVelocitiesCompl,
-                    dBlendCoefficients,
+                    dBlendCoefficientsCompl,
                     start,
                     end,
                     COMPL(resID)
@@ -905,7 +959,10 @@ __global__ void computeAccelerationsD(
         }
     }
 
+    //--------------------------------------------------------------------------
     // compute force contribution of the boundary
+    //--------------------------------------------------------------------------
+    
     computeCoordinatesOff(
         cs, 
         xi, 
@@ -944,9 +1001,14 @@ __global__ void computeAccelerationsD(
     dAccelerations[3*idx + 0] = fi.x/rhoi + bi.x;
     dAccelerations[3*idx + 1] = fi.y/rhoi - 9.81f + bi.y;
     dAccelerations[3*idx + 2] = fi.z/rhoi + bi.z;
+
+    if (xi.x > 0.5f && dStates[idx] == 0 && resID == 0)
+    {
+        dStates[idx] = 3;   // mark particle for splitting
+    }
 }
 //------------------------------------------------------------------------------
-__global__ void integrateD (
+__global__ void integrateD(
     float* dPositions, 
     float* dVelocities, 
     float* dAccelerations,
@@ -954,12 +1016,20 @@ __global__ void integrateD (
     float* dBlendCoefficients,
     unsigned int* dActiveIDs,               // array of active particle ids
     unsigned int* dNumParticles,            // counter var for active particles
+    float* dPositionsCompl, 
+    float* dVelocitiesCompl, 
+    unsigned char* dStatesCompl,
+    float* dBlendCoefficientsCompl,
+    unsigned int* dActiveIDsCompl,         
+    unsigned int* dNumParticlesCompl,    
     const float* dTempPositions,
     const float* dTempVelocities,
+    const float* dDensities,
     const unsigned char* dTempStates,
     const float* dTempBlendCoefficients,
     float timeStep,
-    unsigned int numParticles
+    unsigned int numParticles,
+    unsigned char resID
 )
 {
     unsigned int idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1002,19 +1072,19 @@ __global__ void integrateD (
     // update blend coefficients and states
     //--------------------------------------------------------------------------
    
-    const float c[] = {0.0f, -1.0f, 1.0f}; 
+    const float c[] = {0.0f, 0.0f, 0.0f, 0.0f}; 
 
     unsigned char state = dTempStates[idx];
     float blendCoeff = dTempBlendCoefficients[idx];
     
     blendCoeff += c[state]*gConfiguration.BlendIncrement;
 
-    if (blendCoeff <= 0.0f)
+    if (blendCoeff <= 0.0f && state == 1)
     {
         return;
     }
 
-    if (blendCoeff >= 1.0f)
+    if (blendCoeff >= 1.0f && state == 2)
     {
         // if the particle has/reaches a blend coeff of 1.0f or above
         // it stays/becomes a default particle
@@ -1022,11 +1092,31 @@ __global__ void integrateD (
         blendCoeff = 1.0f;
     }
 
-    unsigned int i = atomicAdd(dNumParticles, 1);
+    // low res particles which are marked for splitting are splitted here
+    if (state == 3 && resID == LOW_RES)
+    {
+        float dens = dDensities[idx];
 
-    dActiveIDs[i] = idx;
-    dStates[idx] = state;
+        insertHighResParticles(
+            dPositionsCompl,
+            dVelocitiesCompl,
+            dBlendCoefficientsCompl,
+            dStatesCompl,
+            dActiveIDsCompl,
+            dNumParticlesCompl,
+            xi,
+            vi,
+            dens
+        );
+
+        state = 1; // set state to delete
+    }
+
     dBlendCoefficients[idx] = blendCoeff;
+    dStates[idx] = state;
+
+    unsigned int i = atomicAdd(dNumParticles, 1);
+    dActiveIDs[i] = idx;
 }
 //------------------------------------------------------------------------------
 
@@ -1126,7 +1216,7 @@ Solver::SPHParticleData::SPHParticleData (
     // of particles and the threads per block we use. Also compute the amount
     // of shared memory we need to compute the values for [dCellStart] and
     // [dCellEnd]
-    computeGridDimensions(GridDimensions, BlockDimensions, data->NumParticles);
+    computeGridDimensions(GridDimensions, BlockDimensions, data->MaxParticles);
     SharedMemSize = sizeof(int)*(BlockDimensions.x + 1);
 }
 //------------------------------------------------------------------------------
@@ -1186,7 +1276,7 @@ Solver::BoundaryParticleData::~BoundaryParticleData ()
 //==============================================================================
 
 //------------------------------------------------------------------------------
-Solver::Solver (
+Solver::Solver(
     ParticleData* fluidData, 
     ParticleData* fluidDataHigh,
     ParticleData* boundaryData,
@@ -1279,7 +1369,7 @@ Solver::~Solver ()
     delete mBoundaryData;
 }
 //------------------------------------------------------------------------------
-void Solver::Bind () const
+void Solver::Bind() const
 {
     // set the configuration of this solver on the device
     CUDA::SafeCall(
@@ -1293,21 +1383,35 @@ void Solver::Bind () const
     );
 }
 //------------------------------------------------------------------------------
-void Solver::Advance (float timeStep)
+void Solver::Advance(float timeStep)
 {
     CUDA::Timer t;
     t.Start();
     mFluidData[LOW_RES]->Data->Map();
     mFluidData[HIGH_RES]->Data->Map();
     mBoundaryData->Data->Map();
-    this->computeNeighborhoods(LOW_RES);
     this->computeNeighborhoods(HIGH_RES);
-    this->computeDensities(LOW_RES);
+    this->computeNeighborhoods(LOW_RES);
     this->computeDensities(HIGH_RES);
-    this->computeAccelerations(LOW_RES);
+    this->computeDensities(LOW_RES);
     this->computeAccelerations(HIGH_RES);
-    this->integrate(LOW_RES, timeStep);
+    this->computeAccelerations(LOW_RES);
+
+    //if (mFluidData[HIGH_RES]->Data->NumParticles != 0 )
+    //{
+    //    CUDA::DumpArrayNE<float>(
+    //        mFluidData[HIGH_RES]->dDensities, 
+    //        mFluidData[HIGH_RES]->Data->NumParticles,
+    //        1.0f
+    //    );
+    //    std::system("pause");
+    //}
+
+
+
+
     this->integrate(HIGH_RES, timeStep);
+    this->integrate(LOW_RES, timeStep);
     mBoundaryData->Data->Unmap();
     mFluidData[HIGH_RES]->Data->Unmap();
     mFluidData[LOW_RES]->Data->Unmap();
@@ -1315,7 +1419,7 @@ void Solver::Advance (float timeStep)
     t.DumpElapsed();
 }
 //------------------------------------------------------------------------------
-void Solver::computeNeighborhoods (unsigned char resID)
+void Solver::computeNeighborhoods(unsigned char resID)
 {
     CUDA::Memcpy<unsigned int>(
         &mFluidData[resID]->Data->NumParticles,
@@ -1324,6 +1428,11 @@ void Solver::computeNeighborhoods (unsigned char resID)
         cudaMemcpyDeviceToHost
     );
     
+    if (resID == LOW_RES)
+    {
+        std::cout << mFluidData[LOW_RES]->Data->NumParticles << std::endl;
+    }
+
     if (!mFluidData[resID]->Data->NumParticles)
     {
         return;
@@ -1374,6 +1483,7 @@ void Solver::computeNeighborhoods (unsigned char resID)
         mFluidData[resID]->dHashs,
         mFluidData[resID]->Data->NumParticles
     );
+
 }
 //------------------------------------------------------------------------------
 void Solver::computeDensities (unsigned char resID)
@@ -1392,6 +1502,7 @@ void Solver::computeDensities (unsigned char resID)
         mFluidData[resID]->dCellStart,
         mFluidData[resID]->dCellEnd,
         mFluidData[COMPL(resID)]->dTempPositions,
+        mFluidData[COMPL(resID)]->dTempBlendCoefficients,
         mFluidData[COMPL(resID)]->dCellStart,
         mFluidData[COMPL(resID)]->dCellEnd,
         mFluidData[resID]->Data->NumParticles,
@@ -1399,7 +1510,7 @@ void Solver::computeDensities (unsigned char resID)
     );
 }
 //------------------------------------------------------------------------------
-void Solver::computeAccelerations (unsigned char resID)
+void Solver::computeAccelerations(unsigned char resID)
 {
     if (!mFluidData[resID]->Data->NumParticles)
     {
@@ -1413,13 +1524,15 @@ void Solver::computeAccelerations (unsigned char resID)
         mFluidData[resID]->dPressures,
         mFluidData[resID]->dTempPositions,
         mFluidData[resID]->dTempVelocities,
-        mFluidData[resID]->dBlendCoefficients,
+        mFluidData[resID]->dTempBlendCoefficients,
+        mFluidData[resID]->dTempStates,
         mFluidData[resID]->dCellStart,
         mFluidData[resID]->dCellEnd,
         mFluidData[COMPL(resID)]->dDensities,
         mFluidData[COMPL(resID)]->dPressures,
         mFluidData[COMPL(resID)]->dTempPositions,
         mFluidData[COMPL(resID)]->dTempVelocities,
+        mFluidData[COMPL(resID)]->dTempBlendCoefficients,
         mFluidData[COMPL(resID)]->dCellStart,
         mFluidData[COMPL(resID)]->dCellEnd,
         mBoundaryData->Data->dPositions,
@@ -1430,7 +1543,7 @@ void Solver::computeAccelerations (unsigned char resID)
     );
 }
 //------------------------------------------------------------------------------
-void Solver::integrate (unsigned char resID, float timeStep)
+void Solver::integrate(unsigned char resID, float timeStep)
 {
     if (!mFluidData[resID]->Data->NumParticles)
     {
@@ -1447,12 +1560,20 @@ void Solver::integrate (unsigned char resID, float timeStep)
         mFluidData[resID]->dBlendCoefficients,
         mFluidData[resID]->dActiveIDs,
         mFluidData[resID]->dNumParticles,
+        mFluidData[COMPL(resID)]->Data->dPositions,
+        mFluidData[COMPL(resID)]->dVelocities,
+        mFluidData[COMPL(resID)]->dStates,
+        mFluidData[COMPL(resID)]->dBlendCoefficients,
+        mFluidData[COMPL(resID)]->dActiveIDs,
+        mFluidData[COMPL(resID)]->dNumParticles,
         mFluidData[resID]->dTempPositions,
         mFluidData[resID]->dTempVelocities,
+        mFluidData[resID]->dDensities,
         mFluidData[resID]->dTempStates,
         mFluidData[resID]->dTempBlendCoefficients,
         timeStep,
-        mFluidData[resID]->Data->NumParticles
+        mFluidData[resID]->Data->NumParticles,
+        resID
     );
 }
 //------------------------------------------------------------------------------

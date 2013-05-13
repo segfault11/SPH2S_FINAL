@@ -62,7 +62,7 @@ int main (int argc, char* argv[])
 void display () 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gsSolver->Advance(0.00025f);
+    gsSolver->Advance(0.0005f);
     gsRenderer->SetCamera(*gsCamera);
     gsRenderer->Render();
     gsRendererHigh->SetCamera(*gsCamera);
