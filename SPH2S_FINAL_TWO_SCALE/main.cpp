@@ -10,21 +10,22 @@
 #include "ParticleData.h"
 #include "Solver.h" 
 #include "BoxRenderer.h"
+#include "VideoWriter\VideoWriter.h"
 //------------------------------------------------------------------------------
 #define PI 3.14159265358979323846
 #define WIDTH  1024
 #define HEIGHT 768
 //------------------------------------------------------------------------------
-ParticleData* gsParticleData;
-ParticleData* gsParticleDataHigh;
-ParticleData* gsBoundaryParticles;
-GL::Camera* gsCamera;
-Renderer* gsRenderer;
-Renderer* gsRendererHigh;
-Renderer* gsBoundaryRenderer;
-BoxRenderer* gsBoxRenderer;
-Solver* gsSolver;
-
+static ParticleData* gsParticleData;
+static ParticleData* gsParticleDataHigh;
+static ParticleData* gsBoundaryParticles;
+static GL::Camera* gsCamera;
+static Renderer* gsRenderer;
+static Renderer* gsRendererHigh;
+static Renderer* gsBoundaryRenderer;
+static BoxRenderer* gsBoxRenderer;
+static Solver* gsSolver;
+static VideoWriter gsVideoWriter("video.avi", WIDTH, HEIGHT);
 static float gsDAngY = 0.0f;
 //------------------------------------------------------------------------------
 static void display ();
@@ -62,7 +63,7 @@ int main (int argc, char* argv[])
 void display () 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gsSolver->Advance(0.0005f);
+    gsSolver->Advance(0.0009f);
     gsRenderer->SetCamera(*gsCamera);
     gsRenderer->Render();
     gsRendererHigh->SetCamera(*gsCamera);
@@ -73,6 +74,13 @@ void display ()
     glutSwapBuffers();
     glutPostRedisplay();
     gsCamera->RotateAroundFocus(0.0f, gsDAngY, 0.0f);
+
+    static int i = 0;
+
+    if (i % 2 == 0)
+    {
+        gsVideoWriter.CaptureFrame();
+    }
 }
 //------------------------------------------------------------------------------
 void mouse (int button, int state, int x, int y)
@@ -134,17 +142,19 @@ void initSim ()
     
     Grid particleGrid = Grid::MakeGrid(
             make_float3(0.04f, 0.04f, 0.01f),
-            make_float3(0.25f, 0.751f, 0.39f),
+            make_float3(0.35f, 0.75f, 0.39f),
             0.015f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
-    Grid particleGridHigh = Grid::MakeGrid(
-            make_float3(0.3f, 0.04f, 0.01f),
-            make_float3(0.6f, 0.751f, 0.35f),
-            0.0075f
-        );
-    gsParticleDataHigh = ParticleData::CreateParticleBox(particleGridHigh);
-    gsParticleDataHigh->NumParticles = 0;
+
+    //Grid particleGridHigh = Grid::MakeGrid(
+    //        make_float3(1.15f, 0.04f, 0.01f),
+    //        make_float3(1.45f, 0.75f, 0.35f),
+    //        0.0075f
+    //    );
+    //gsParticleDataHigh = ParticleData::CreateParticleBox(particleGridHigh);
+    gsParticleDataHigh = new ParticleData(gsParticleData->MaxParticles*8);
+    gsParticleDataHigh->NumParticles = 0;    
     
     //--------------------------------------------------------------------------
     // init boundary particles
@@ -152,7 +162,7 @@ void initSim ()
 
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, -0.1f),
-            make_float3(2.0f, 1.5f, 0.5f),
+            make_float3(1.5f, 1.5f, 0.5f),
             0.015f
         );
     gsBoundaryParticles = ParticleData::CreateParticleBoxCanvas(
@@ -165,8 +175,8 @@ void initSim ()
     //--------------------------------------------------------------------------
 
     gsCamera = new GL::Camera(
-        GL::Vector3f(1.0f, 0.75f, 2.0f),
-        GL::Vector3f(1.0f, 0.75f, 0.2f),
+        GL::Vector3f(0.75f, 0.75f, 2.0f),
+        GL::Vector3f(0.75f, 0.75f, 0.2f),
         GL::Vector3f(0.0f, 1.0f, 0.0f),
         static_cast<float>(WIDTH)/static_cast<float>(HEIGHT),
         60.0f,
@@ -184,7 +194,7 @@ void initSim ()
             0.1f,
             0.5f,
             0.5f,
-            0.0085f
+            0.017f
         );
     gsRenderer = new Renderer(gsParticleData, rendererConfig);
     gsRenderer->SetCamera(*gsCamera);
@@ -196,7 +206,7 @@ void initSim ()
             0.1f,
             0.5f,
             0.5f,
-            0.00425f
+            0.0085f
         );    
     gsRendererHigh = new Renderer(gsParticleDataHigh, rendererConfigHigh);
     
@@ -205,14 +215,14 @@ void initSim ()
     gsBoundaryRenderer->SetCamera(*gsCamera);
     gsBoxRenderer = new BoxRenderer(
             make_float3(0.0f, 0.0f, -0.1f),
-            make_float3(2.0f, 1.6f, 0.5f)
+            make_float3(1.5f, 1.5f, 0.5f)
         );
     gsBoxRenderer->SetCamera(*gsCamera);
 
     // init Solver
     SolverConfiguration config = SolverConfiguration::MakeConfiguration(
             make_float3(-0.1f, -0.1f, -0.3f),
-            make_float3(2.1f, 1.4f, 0.6f),
+            make_float3(1.6f, 1.4f, 0.6f),
             Grid::ComputeVolume(particleGrid),
             gsParticleData->MaxParticles,
             35,                      // avg. particle neighbors
@@ -221,7 +231,7 @@ void initSim ()
             5.0f,                    // viscosity
             88.1472f,                // speed of sound in fluid
             0.8f,                    // tension coefficient
-            0.05f
+            0.0125f                  // blend increment
         );
     std::cout << std::powf(3.0f/4.0f*Grid::ComputeVolume(particleGrid)/gsParticleData->MaxParticles*1.0f/M_PI, 1.0f/3.0f) << std::endl;
 

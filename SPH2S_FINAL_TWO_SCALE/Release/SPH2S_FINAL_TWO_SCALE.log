@@ -1,30 +1,24 @@
-﻿Build started 5/13/2013 9:32:40 PM.
+﻿Build started 5/15/2013 10:40:02 PM.
      1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SPH2S_FINAL_TWO_SCALE.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\SPH2S_FINAL_TWO_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
        AddCudaCompileDeps:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /D_MBCS /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu 
+       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompilePropsDeps:
        Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
        CudaBuild:
-         Compiling CUDA source file Solver.cu...
-         cmd.exe /C "C:\Users\Arno\AppData\Local\Temp\8fa80841f5724ca6abb4c6e156ab6a65.cmd"
-         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\Solver.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu"
-         
-         C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\Solver.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu" 
-         Solver.cu
-         tmpxft_00001de0_00000000-2_Solver.cudafe1.gpu
-         tmpxft_00001de0_00000000-7_Solver.cudafe2.gpu
-         Solver.cu
-         tmpxft_00001de0_00000000-2_Solver.cudafe1.cpp
-         tmpxft_00001de0_00000000-12_Solver.ii
-     1>c:\users\arno\documents\projects\sph2s_final\sph2s_final_two_scale\Solver.h(30): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+       Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        ClCompile:
-         All outputs are up-to-date.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /IC:\OpenCV2.1\include /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
+         main.cpp
+     1>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include\thrust/system/detail/error_category.inl(102): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(157) : see declaration of 'strerror'
+     1>c:\users\arno\documents\projects\sph2s_final\sph2s_final_two_scale\Solver.h(34): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+     1>main.cpp(236): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
        ManifestResourceCompile:
          All outputs are up-to-date.
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_TWO_SCALE.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\lib\Win32" glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\SPH2S_FINAL_TWO_SCALE.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_TWO_SCALE.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_TWO_SCALE.lib" /MACHINE:X86 Release\Solver.cu.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_TWO_SCALE.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\OpenCV2.1\lib /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\lib\Win32" highgui210.lib cv210.lib cxcore210.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\SPH2S_FINAL_TWO_SCALE.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_TWO_SCALE.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Arno\Documents\Projects\SPH2S_FINAL\Release\SPH2S_FINAL_TWO_SCALE.lib" /MACHINE:X86 Release\Solver.cu.obj
          Release\SPH2S_FINAL_TWO_SCALE.exe.embed.manifest.res
          Release\BoxRenderer.obj
          Release\cuda.obj
@@ -34,6 +28,7 @@
          Release\Vector3f.obj
          Release\ParticleData.obj
          Release\Renderer.obj
+         Release\VideoWriter.obj
      1>LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
          Generating code
          Finished generating code
@@ -58,4 +53,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:20.25
+Time Elapsed 00:00:02.03

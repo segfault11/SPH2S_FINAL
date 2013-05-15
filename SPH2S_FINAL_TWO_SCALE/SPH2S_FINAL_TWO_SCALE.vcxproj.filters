@@ -25,6 +25,9 @@
     <Filter Include="ParticleData">
       <UniqueIdentifier>{d0265fe7-081d-43a2-900b-0beace3e5e2d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VideoWriter">
+      <UniqueIdentifier>{71620968-8946-45d6-b7c4-9e0425b48cd3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cuda.cpp">
@@ -49,6 +52,9 @@
       <Filter>ParticleData</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="VideoWriter\VideoWriter.cpp">
+      <Filter>VideoWriter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cuda.h">
@@ -77,6 +83,9 @@
     </ClInclude>
     <ClInclude Include="ParticleData.h">
       <Filter>ParticleData</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoWriter\VideoWriter.h">
+      <Filter>VideoWriter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

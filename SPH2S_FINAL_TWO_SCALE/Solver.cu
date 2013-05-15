@@ -454,12 +454,12 @@ __device__ inline void computeAccelerationCellCompl(
             evaluatePoly6Kernel(
                 weight0, 
                 dist, 
-                gConfiguration.EffectiveRadius[resID]
+                gConfiguration.EffectiveRadius[LOW_RES]
             );
             evaluatePoly6Kernel(
                 weight1, 
                 dist, 
-                gConfiguration.EffectiveRadius[resID]
+                gConfiguration.EffectiveRadius[HIGH_RES]
             );
             float weight = 0.5f*(weight0 + weight1);
             float coeffT = -weight*gConfiguration.FluidParticleMass[resID]*
@@ -540,14 +540,15 @@ __device__ void insertHighResParticles(
     
     // add eight to the high res particles
     unsigned int id = atomicAdd(dNumParticles, 8);
-    float r = pow(
+    float r = 0.5f*pow(
             3.0f/(4.0f*float(M_PI))*
             gConfiguration.FluidParticleMass[LOW_RES]/densLow,
             1.0f/3.0f
         );
+
     for (unsigned int i = 0; i < 8; i++)
     {
-        dActiveIDs[id + i] = id;
+        dActiveIDs[id + i] = id + i;
         dBlendCoefficients[id + i] = 0.0f;
         dStates[id + i] = 2;
         dPositions[3*(id + i) + 0] = posLow.x + r*dir[3*i + 0];
@@ -557,6 +558,7 @@ __device__ void insertHighResParticles(
         dVelocities[3*(id + i) + 1] = velLow.y;
         dVelocities[3*(id + i) + 2] = velLow.z;
     }
+
 }
 //------------------------------------------------------------------------------
 
@@ -1072,7 +1074,7 @@ __global__ void integrateD(
     // update blend coefficients and states
     //--------------------------------------------------------------------------
    
-    const float c[] = {0.0f, 0.0f, 0.0f, 0.0f}; 
+    const float c[] = {0.0f, -1.0f, 1.0f, 0.0f}; 
 
     unsigned char state = dTempStates[idx];
     float blendCoeff = dTempBlendCoefficients[idx];
@@ -1126,7 +1128,7 @@ __global__ void integrateD(
 
 //------------------------------------------------------------------------------
 #define BLOCK_DIMENSIONS_X 256
-#define EMPTY_CELL_ID 0xFFFFFFFF
+#define EMPTY_CELL_ID 0xFF
 //------------------------------------------------------------------------------
 
 //==============================================================================
@@ -1396,42 +1398,41 @@ void Solver::Advance(float timeStep)
     this->computeDensities(LOW_RES);
     this->computeAccelerations(HIGH_RES);
     this->computeAccelerations(LOW_RES);
-
-    //if (mFluidData[HIGH_RES]->Data->NumParticles != 0 )
-    //{
-    //    CUDA::DumpArrayNE<float>(
-    //        mFluidData[HIGH_RES]->dDensities, 
-    //        mFluidData[HIGH_RES]->Data->NumParticles,
-    //        1.0f
-    //    );
-    //    std::system("pause");
-    //}
-
-
-
-
+    CUDA::Memset<unsigned int>(mFluidData[HIGH_RES]->dNumParticles, 0, 1);
+    CUDA::Memset<unsigned int>(mFluidData[LOW_RES]->dNumParticles, 0, 1);
     this->integrate(HIGH_RES, timeStep);
     this->integrate(LOW_RES, timeStep);
     mBoundaryData->Data->Unmap();
     mFluidData[HIGH_RES]->Data->Unmap();
     mFluidData[LOW_RES]->Data->Unmap();
     t.Stop();
-    t.DumpElapsed();
+    //t.DumpElapsed();
+    //std::system("pause");
 }
 //------------------------------------------------------------------------------
 void Solver::computeNeighborhoods(unsigned char resID)
 {
+    // reset, then compute cell start end list
+    // NOTE: it is important to reset the cell lists, even though zero particles
+    // are active, as otherwise the lists would still contain the particle ids
+    // of the last particles before complete deletion of the system
+    CUDA::Memset<unsigned int>(
+        mFluidData[resID]->dCellStart, 
+        EMPTY_CELL_ID, 
+        mFluidData[resID]->NumGridCells
+    );
+    CUDA::Memset<unsigned int>(
+        mFluidData[resID]->dCellEnd, 
+        EMPTY_CELL_ID, 
+        mFluidData[resID]->NumGridCells
+    );
+
     CUDA::Memcpy<unsigned int>(
         &mFluidData[resID]->Data->NumParticles,
         mFluidData[resID]->dNumParticles,
         1,
         cudaMemcpyDeviceToHost
     );
-    
-    if (resID == LOW_RES)
-    {
-        std::cout << mFluidData[LOW_RES]->Data->NumParticles << std::endl;
-    }
 
     if (!mFluidData[resID]->Data->NumParticles)
     {
@@ -1456,17 +1457,6 @@ void Solver::computeNeighborhoods(unsigned char resID)
         thrust::device_ptr<unsigned int>(mFluidData[resID]->dActiveIDs)
     );
 
-    // reset, then compute cell start end list
-    CUDA::Memset<unsigned int>(
-        mFluidData[resID]->dCellStart, 
-        EMPTY_CELL_ID, 
-        mFluidData[resID]->NumGridCells
-    );
-    CUDA::Memset<unsigned int>(
-        mFluidData[resID]->dCellEnd, 
-        EMPTY_CELL_ID, 
-        mFluidData[resID]->NumGridCells
-    );
     reorderAndComputeCellStartEndD<<<mFluidData[resID]->GridDimensions, 
         mFluidData[resID]->BlockDimensions, mFluidData[resID]->SharedMemSize>>>(
         mFluidData[resID]->dCellStart,
@@ -1550,7 +1540,6 @@ void Solver::integrate(unsigned char resID, float timeStep)
         return;
     }
 
-    CUDA::Memset<unsigned int>(mFluidData[resID]->dNumParticles, 0, 1);
     integrateD<<<mFluidData[resID]->GridDimensions, 
         mFluidData[resID]->BlockDimensions>>>(
         mFluidData[resID]->Data->dPositions,
