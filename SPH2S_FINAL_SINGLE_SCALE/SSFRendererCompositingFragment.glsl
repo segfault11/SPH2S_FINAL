@@ -59,7 +59,7 @@ void main()
         ddx = ddx2;
     }
 
-    if (abs(ddy.z) > abs(ddy.z))
+    if (abs(ddy.z) > abs(ddy2.z))
     {
         ddy = ddy2;
     }

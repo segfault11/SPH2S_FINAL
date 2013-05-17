@@ -108,6 +108,7 @@ __global__ void blurBilateralX(
     float* dResult,
     int blurRadius,
     float blurScale,
+    float blurDepthFalloff,
     unsigned int width,
     unsigned int height
 )
@@ -133,11 +134,14 @@ __global__ void blurBilateralX(
 
     for (int i = -blurRadius; i <= blurRadius; i++)
     {
+        float val = tex2D(gDepthMap, u + i, v);
         float r = float(i)*blurScale;
         float w = exp(-r*r);
-        float val = tex2D(gDepthMap, u + i, v);
-        res += val*w;
-        norm += w;
+        float r2 = (val - valc)*blurDepthFalloff;
+        float g = exp(-r2*r2);
+
+        res += val*w*g;
+        norm += w*g;
     }
 
     dResult[idx] = res/norm; 
@@ -148,6 +152,7 @@ __global__ void blurBilateralY(
     float* dTempResult,
     int blurRadius,
     float blurScale,
+    float blurDepthFalloff,
     unsigned int width,
     unsigned int height
 )
@@ -173,11 +178,14 @@ __global__ void blurBilateralY(
 
     for (int i = -blurRadius; i <= blurRadius; i++)
     {
+        float val = dTempResult[(v + i)*width + u];
         float r = float(i)*blurScale;
         float w = exp(-r*r);
-        float val = dTempResult[(v + i)*width + u];
-        res += val*w;
-        norm += w;
+        float r2 = (val - valc)*blurDepthFalloff;
+        float g = exp(-r2*r2);
+
+        res += val*w*g;
+        norm += w*g;
     }
 
     dResult[idx] = res/norm; 
@@ -416,8 +424,6 @@ void SSFRenderer::Render()
     glDisable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-
     try 
     {
         this->blur();
@@ -513,31 +519,33 @@ void SSFRenderer::blur()
     );
     blurBilateralX<<<mGridDimensions, mBlockDimensions>>>(
         mdTempData[0],
-        2, 
+        3, 
         0.2f,
+        20.0f,
         mWidth,
         mHeight
     );
     blurBilateralY<<<mGridDimensions, mBlockDimensions>>>(
         mdTempData[1],
         mdTempData[0],
-        2, 
+        3, 
         0.2f,
+        20.0f,
         mWidth,
         mHeight
     );
    
     // copy results to texture
-    //CUDA_SAFE_INV( 
-    //    cudaMemcpyToArray(
-    //        texArray[0],
-    //        0, 
-    //        0, 
-    //        mdTempData[1], 
-    //        mWidth*mHeight*sizeof(float), 
-    //        cudaMemcpyDeviceToDevice
-    //    )
-    //);
+    CUDA_SAFE_INV( 
+        cudaMemcpyToArray(
+            texArray[0],
+            0, 
+            0, 
+            mdTempData[1], 
+            mWidth*mHeight*sizeof(float), 
+            cudaMemcpyDeviceToDevice
+        )
+    );
     cudaUnbindTexture(mTextureReferences[0]);
 
 

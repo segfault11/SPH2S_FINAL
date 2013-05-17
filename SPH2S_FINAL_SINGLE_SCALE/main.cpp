@@ -11,6 +11,7 @@
 #include "Solver.h" 
 #include "BoxRenderer.h"
 #include "SSFRenderer.h"
+#include "VideoWriter\VideoWriter.h"
 //------------------------------------------------------------------------------
 #define PI 3.14159265358979323846
 #define WIDTH  1024
@@ -23,7 +24,7 @@ Renderer* gsRenderer;
 Renderer* gsBoundaryRenderer;
 BoxRenderer* gsBoxRenderer;
 Solver* gsSolver;
-
+VideoWriter gsVideoWriter("video.avi", WIDTH, HEIGHT);
 SSFRenderer* gsSSFRenderer;
 
 static float gsDAngY = 0.0f;
@@ -36,7 +37,7 @@ static void initGL ();
 static void initSim ();
 static void tearDownSim ();
 //------------------------------------------------------------------------------
-int main (int argc, char* argv[])
+int main (int argc, char* argv[]) 
 {  
     cudaGLSetGLDevice(0); 
     glutInit(&argc, argv);
@@ -77,6 +78,16 @@ void display ()
 
    // std::system("pause");
     gsCamera->RotateAroundFocus(0.0f, gsDAngY, 0.0f);
+
+    static int i = 0;
+    
+    if (i % 5 == 0)
+    {
+        gsVideoWriter.CaptureFrame();
+    }
+    
+    i++;
+
 }
 //------------------------------------------------------------------------------
 void mouse (int button, int state, int x, int y)

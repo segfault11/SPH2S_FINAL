@@ -31,6 +31,9 @@
     <Filter Include="Renderer\SSFRenderer\GLSLPrograms">
       <UniqueIdentifier>{20c55e63-6f0b-4e06-9146-c1d894fb4efa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VideoWriter">
+      <UniqueIdentifier>{a03fc1fc-6d79-429f-a17f-b5ff063589ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cuda.cpp">
@@ -54,6 +57,9 @@
     </ClCompile>
     <ClCompile Include="BoxRenderer.cpp">
       <Filter>Renderer\BoxRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoWriter\VideoWriter.cpp">
+      <Filter>VideoWriter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +92,9 @@
     </ClInclude>
     <ClInclude Include="SSFRenderer.h">
       <Filter>Renderer\SSFRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoWriter\VideoWriter.h">
+      <Filter>VideoWriter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
