@@ -30,6 +30,7 @@
     <ClInclude Include="ParticleData.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Solver.h" />
+    <ClInclude Include="SSFRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BoxRendererFragment.glsl" />
@@ -37,9 +38,16 @@
     <None Include="RendererFragment.glsl" />
     <None Include="RendererGeometry.glsl" />
     <None Include="RendererVertex.glsl" />
+    <None Include="SSFRendererCompositingFragment.glsl" />
+    <None Include="SSFRendererCompositingVertex.glsl" />
+    <None Include="SSFRendererDepthFragment.glsl" />
+    <None Include="SSFRendererSphereGeometry.glsl" />
+    <None Include="SSFRendererSphereVertex.glsl" />
+    <None Include="SSFRendererThicknessFragment.glsl" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Solver.cu" />
+    <CudaCompile Include="SSFRenderer.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{73018CB8-CC23-49EE-BAF7-CE5E5306152E}</ProjectGuid>

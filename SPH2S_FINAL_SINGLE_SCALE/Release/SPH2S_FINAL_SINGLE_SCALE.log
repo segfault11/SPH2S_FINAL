@@ -1,11 +1,17 @@
-﻿Build started 5/15/2013 10:31:11 PM.
-     1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_SINGLE_SCALE\SPH2S_FINAL_SINGLE_SCALE.vcxproj" on node 3 (build target(s)).
+﻿Build started 5/17/2013 11:34:12 PM.
+     1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_SINGLE_SCALE\SPH2S_FINAL_SINGLE_SCALE.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\SPH2S_FINAL_SINGLE_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
        AddCudaCompileDeps:
        Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
+       AddCudaCompileDeps:
+       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompilePropsDeps:
        Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
+       AddCudaCompilePropsDeps:
+       Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
+       CudaBuild:
+       Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        CudaBuild:
        Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        ClCompile:
@@ -31,4 +37,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.13
+Time Elapsed 00:00:00.15

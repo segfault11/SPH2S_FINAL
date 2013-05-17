@@ -21,6 +21,23 @@
 #include <thrust\iterator\zip_iterator.h>
 //------------------------------------------------------------------------------
 #define CUDA_SAFE_CALL(x) SafeCall(x, __FILE__, __LINE__);
+#define CUDA_SAFE_INV(x) SafeInv(x, __FILE__, __LINE__);
+//------------------------------------------------------------------------------
+inline void SafeInv (cudaError_t err, const char* filename, unsigned int line)
+{
+    using namespace std;
+
+    if (err == cudaSuccess)
+    {
+        return;
+    }    
+    stringstream str(stringstream::in | stringstream::out);
+
+    str << "Exception thrown in FILE: " << filename << " LINE: " << line << endl;
+    str << "Error Message: " << cudaGetErrorString(cudaGetLastError()) << endl;
+    
+    throw runtime_error(str.str());
+}
 //------------------------------------------------------------------------------
 namespace CUDA
 {
@@ -192,6 +209,23 @@ private:
 //------------------------------------------------------------------------------
 namespace GL
 {
+//------------------------------------------------------------------------------
+inline void RegisterImage(
+    struct cudaGraphicsResource** resource,
+    GLuint image,
+    GLenum target,
+    unsigned int flags
+)
+{
+    CUDA_SAFE_CALL( 
+        cudaGraphicsGLRegisterImage(
+            resource, 
+            image, 
+            target, 
+            flags
+        ) 
+    ); 
+}
 //------------------------------------------------------------------------------
 inline void RegisterBuffer (
     struct cudaGraphicsResource** resource, 

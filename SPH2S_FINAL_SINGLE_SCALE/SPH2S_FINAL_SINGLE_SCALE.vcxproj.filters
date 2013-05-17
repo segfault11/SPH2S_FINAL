@@ -25,6 +25,12 @@
     <Filter Include="Renderer\BoxRenderer">
       <UniqueIdentifier>{d41aef25-0b5d-4feb-8833-3e349090a74f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\SSFRenderer">
+      <UniqueIdentifier>{7ef99080-7966-4dad-86a4-1130f04a4b49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\SSFRenderer\GLSLPrograms">
+      <UniqueIdentifier>{20c55e63-6f0b-4e06-9146-c1d894fb4efa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cuda.cpp">
@@ -78,6 +84,9 @@
     <ClInclude Include="BoxRenderer.h">
       <Filter>Renderer\BoxRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="SSFRenderer.h">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="RendererVertex.glsl">
@@ -95,10 +104,31 @@
     <None Include="BoxRendererVertex.glsl">
       <Filter>Renderer\BoxRenderer</Filter>
     </None>
+    <None Include="SSFRendererDepthFragment.glsl">
+      <Filter>Renderer\SSFRenderer\GLSLPrograms</Filter>
+    </None>
+    <None Include="SSFRendererSphereGeometry.glsl">
+      <Filter>Renderer\SSFRenderer\GLSLPrograms</Filter>
+    </None>
+    <None Include="SSFRendererSphereVertex.glsl">
+      <Filter>Renderer\SSFRenderer\GLSLPrograms</Filter>
+    </None>
+    <None Include="SSFRendererThicknessFragment.glsl">
+      <Filter>Renderer\SSFRenderer\GLSLPrograms</Filter>
+    </None>
+    <None Include="SSFRendererCompositingVertex.glsl">
+      <Filter>Renderer\SSFRenderer\GLSLPrograms</Filter>
+    </None>
+    <None Include="SSFRendererCompositingFragment.glsl">
+      <Filter>Renderer\SSFRenderer\GLSLPrograms</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Solver.cu">
       <Filter>Solver</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SSFRenderer.cu">
+      <Filter>Renderer\SSFRenderer</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

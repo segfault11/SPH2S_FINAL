@@ -10,6 +10,7 @@
 #include "ParticleData.h"
 #include "Solver.h" 
 #include "BoxRenderer.h"
+#include "SSFRenderer.h"
 //------------------------------------------------------------------------------
 #define PI 3.14159265358979323846
 #define WIDTH  1024
@@ -22,6 +23,8 @@ Renderer* gsRenderer;
 Renderer* gsBoundaryRenderer;
 BoxRenderer* gsBoxRenderer;
 Solver* gsSolver;
+
+SSFRenderer* gsSSFRenderer;
 
 static float gsDAngY = 0.0f;
 //------------------------------------------------------------------------------
@@ -61,13 +64,18 @@ void display ()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     gsSolver->Advance(0.001f);
-    gsRenderer->SetCamera(*gsCamera);
-    gsRenderer->Render();
-    gsBoxRenderer->SetCamera(*gsCamera);
-    gsBoxRenderer->Render();
+    gsSSFRenderer->SetCamera(*gsCamera);
+    gsSSFRenderer->Render();
+    //gsRenderer->SetCamera(*gsCamera);
+    //gsRenderer->Render();
+    //gsBoxRenderer->SetCamera(*gsCamera);
+    //gsBoxRenderer->Render();
     glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
+
+
+   // std::system("pause");
     gsCamera->RotateAroundFocus(0.0f, gsDAngY, 0.0f);
 }
 //------------------------------------------------------------------------------
@@ -124,18 +132,22 @@ void initGL ()
 //------------------------------------------------------------------------------
 void initSim ()
 {
-//--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     //  init particle data
+    //--------------------------------------------------------------------------
+ 
     Grid particleGrid = Grid::MakeGrid(
             make_float3(0.04f, 0.04f, 0.01f),
             make_float3(0.35f, 0.751f, 0.39f),
             0.0075f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
-    //--------------------------------------------------------------------------
+    
 
     //--------------------------------------------------------------------------
     // init boundary particles
+    //--------------------------------------------------------------------------
+
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, 0.0f),
             make_float3(2.0f, 1.5f, 0.4f),
@@ -145,10 +157,12 @@ void initSim ()
         boundaryGrid, 
         5
     );
-    //--------------------------------------------------------------------------
+    
 
     //--------------------------------------------------------------------------
     //  init camera
+    //--------------------------------------------------------------------------
+
     gsCamera = new GL::Camera(
         GL::Vector3f(1.0f, 0.75f, 2.0f),
         GL::Vector3f(1.0f, 0.75f, 0.2f),
@@ -158,10 +172,12 @@ void initSim ()
         0.1f,
         10.0f
     );
-    //--------------------------------------------------------------------------
+
 
     //--------------------------------------------------------------------------
     //  init Renderer
+    //--------------------------------------------------------------------------
+
     RendererConfig rendererConfig(
             make_float3(1.0f, 1.0f, 1.0f),
             0.1f,
@@ -179,11 +195,11 @@ void initSim ()
             make_float3(2.0f, 1.6f, 0.4f)
         );
     gsBoxRenderer->SetCamera(*gsCamera);
-    //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
     //  init Solver
-    
+    //--------------------------------------------------------------------------
+
     // fill out solver's configuration
     SolverConfiguration config = SolverConfiguration::MakeConfiguration(
             make_float3(-0.1f, -0.1f, -0.1f),
@@ -203,7 +219,12 @@ void initSim ()
     // create solver and set it active
     gsSolver = new Solver(gsParticleData, gsBoundaryParticles, &config); 
     gsSolver->Bind();
-    //--------------------------------------------------------------------------
+   
+
+
+
+    gsSSFRenderer = new SSFRenderer(gsParticleData, WIDTH, HEIGHT, 0.017f);
+
 }
 //------------------------------------------------------------------------------
 void tearDownSim ()

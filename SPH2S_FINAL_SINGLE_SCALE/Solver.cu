@@ -1092,7 +1092,7 @@ void Solver::Advance (float timeStep)
     mBoundaryData.Data->Unmap();
     mFluidData.Data->Unmap();
     t.Stop();
-    t.DumpElapsed();
+//    t.DumpElapsed();
 }
 //------------------------------------------------------------------------------
 void Solver::computeNeighborhoods ()
@@ -1172,28 +1172,28 @@ void Solver::computeAccelerations ()
 //------------------------------------------------------------------------------
 void Solver::integrate (float timeStep)
 {
-    //integrateD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
-    //    mFluidData.Data->dPositions,
-    //    mFluidData.dVelocities,
-    //    mFluidData.dAccelerations,
-    //    mFluidData.dTempPositions,
-    //    mFluidData.dTempVelocities,
-    //    timeStep,
-    //    mFluidData.Data->NumParticles
-    //);
-
-    integrateXSPHD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
+    integrateD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
         mFluidData.Data->dPositions,
         mFluidData.dVelocities,
+        mFluidData.dAccelerations,
         mFluidData.dTempPositions,
         mFluidData.dTempVelocities,
-        mFluidData.dAccelerations,
-        mFluidData.dDensities,
-        mFluidData.dCellStart,
-        mFluidData.dCellEnd,
         timeStep,
         mFluidData.Data->NumParticles
     );
+
+    //integrateXSPHD<<<mFluidData.GridDimensions, mFluidData.BlockDimensions>>>(
+    //    mFluidData.Data->dPositions,
+    //    mFluidData.dVelocities,
+    //    mFluidData.dTempPositions,
+    //    mFluidData.dTempVelocities,
+    //    mFluidData.dAccelerations,
+    //    mFluidData.dDensities,
+    //    mFluidData.dCellStart,
+    //    mFluidData.dCellEnd,
+    //    timeStep,
+    //    mFluidData.Data->NumParticles
+    //);
 
 }
 //------------------------------------------------------------------------------
