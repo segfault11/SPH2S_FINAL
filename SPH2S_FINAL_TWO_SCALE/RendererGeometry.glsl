@@ -18,6 +18,7 @@ in VertexData
     float SphereRadiusX;
     float SphereRadiusY;
     vec4 PosView;
+    float ColorValue;
 }
 inVertexData[1];
 //------------------------------------------------------------------------------
@@ -26,6 +27,7 @@ out GeometryData
 {
 	vec2 TexCoord;  // Tex coords of the created squad 
     vec4 PosView;
+    float ColorValue;
 } 
 outGeometryData;
 //------------------------------------------------------------------------------
@@ -37,21 +39,25 @@ void main ()
     gl_Position = gl_in[0].gl_Position + vec4(+dx, +dy, 0.0f, 0.0f);
 	outGeometryData.TexCoord = vec2(1.0f, 1.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
+    outGeometryData.ColorValue =  inVertexData[0].ColorValue;
 	EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(-dx, +dy, 0.0f, 0.0f);
 	outGeometryData.TexCoord = vec2(-1.0f, 1.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
+    outGeometryData.ColorValue =  inVertexData[0].ColorValue;
 	EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(+dx, -dy, 0.0f, 0.0f);
 	outGeometryData.TexCoord = vec2(1.0f, -1.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
+    outGeometryData.ColorValue =  inVertexData[0].ColorValue;
 	EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(-dx, -dy, 0.0f, 0.0f);
 	outGeometryData.TexCoord = vec2(-1.0f, -1.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
+    outGeometryData.ColorValue =  inVertexData[0].ColorValue;
 	EmitVertex();
 
     EndPrimitive();

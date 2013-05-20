@@ -17,7 +17,7 @@ enum
     HIGH_RES = 1
 };
 //------------------------------------------------------------------------------
-#define COMPL(x) (x + 1)%2
+#define COMPL(x) (x + 1) % 2
 //------------------------------------------------------------------------------
 
 //==============================================================================
@@ -203,6 +203,15 @@ __device__ inline void evaluateBoundaryWeight(
     }
 }
 //------------------------------------------------------------------------------
+#define MEXICAN_HAT_C 0.8673250705840776f // c =  2/(sqrt(3)*pi^(1/4))
+__device__ inline float evaluateMexicanHat3D(float x, float y, float z)
+{
+	x = x*x;
+	y = y*y;
+	z = z*z;
+	return MEXICAN_HAT_C*(x+y+z-3.0f)*exp(-(x+y+z)/2.0f);
+}
+//------------------------------------------------------------------------------
 __device__ inline void computeDensityCell(
     float& rhoi,                 // [out] density of particle i 
     const float3& xi,            // position of particle i
@@ -282,6 +291,10 @@ __device__ inline void computeDensityCellCompl(
 //------------------------------------------------------------------------------
 __device__ inline void computeAccelerationCell(
     float3& fi,
+    float3& velW,
+    float& psiSum,
+    float3& xc,
+    float& massSum,
     float rhoi,
     float pi,
     const float3& xi,        
@@ -302,13 +315,6 @@ __device__ inline void computeAccelerationCell(
         xj.x = dPositions[3*j + 0];
         xj.y = dPositions[3*j + 1];
         xj.z = dPositions[3*j + 2];
-        float3 vj;
-        vj.x = dVelocities[3*j + 0];
-        vj.y = dVelocities[3*j + 1];
-        vj.z = dVelocities[3*j + 2];
-        float rhoj = dDensities[j];
-        float pj = dPressures[j];
-        float lambdaj = dBlendCoefficients[j];
         float dist;
         float3 xij;
         xij.x = xi.x - xj.x; 
@@ -318,9 +324,17 @@ __device__ inline void computeAccelerationCell(
         
         if (dist != 0.0f && dist < gConfiguration.EffectiveRadius[resID])
         {
+            float3 vj;
+            vj.x = dVelocities[3*j + 0];
+            vj.y = dVelocities[3*j + 1];
+            vj.z = dVelocities[3*j + 2];
+            float rhoj = dDensities[j];
+            float pj = dPressures[j];
+            float lambdaj = dBlendCoefficients[j];
+            float mj = gConfiguration.FluidParticleMass[resID];
+
             // evaluate the pressure force partice j exerts on particle i
-            float coeffP = -rhoi*gConfiguration.FluidParticleMass[resID]*
-                (pi/(rhoi*rhoi) + pj/(rhoj*rhoj));
+            float coeffP = -rhoi*mj*(pi/(rhoi*rhoi) + pj/(rhoj*rhoj));
             float3 grad;
             evaluateSpikyKernelGradient(
                 grad, 
@@ -332,8 +346,7 @@ __device__ inline void computeAccelerationCell(
             fi.z += lambdaj*coeffP*grad.z;
 
             // evaluate the viscosity force partice j exerts on particle i
-            float coeffV = gConfiguration.Viscosity*
-                gConfiguration.FluidParticleMass[resID]/rhoj;
+            float coeffV = gConfiguration.Viscosity*mj/rhoj;
             float lapl = 0.0f;
             evaluateViscosityKernelLaplacian(
                 lapl, 
@@ -355,12 +368,23 @@ __device__ inline void computeAccelerationCell(
                 dist, 
                 gConfiguration.EffectiveRadius[resID]
             );
-            float coeffT = -weight*gConfiguration.FluidParticleMass[resID]*
-                gConfiguration.TensionCoefficient;
+            float coeffT = -weight*mj*gConfiguration.TensionCoefficient;
         
             fi.x += lambdaj*coeffT*xij.x;
             fi.y += lambdaj*coeffT*xij.y;
             fi.z += lambdaj*coeffT*xij.z;
+
+            float h = gConfiguration.EffectiveRadius[resID];
+            float psi = evaluateMexicanHat3D(xij.x/h, xij.y/h, xij.z/h);
+            velW.x += vj.x*psi;
+            velW.y += vj.y*psi;
+            velW.z += vj.z*psi;
+            psiSum += psi;
+
+            xc.x += mj*xj.x;
+            xc.y += mj*xj.y;
+            xc.z += mj*xj.z;
+            massSum += mj;
         }
 
     }
@@ -822,6 +846,7 @@ __global__ void computeDensitiesPressuresD(
 //------------------------------------------------------------------------------
 __global__ void computeAccelerationsD(
     float* dAccelerations,
+    float* dColorValues,
     const float* dDensities,              
     const float* dPressures,
     const float* dPositions,
@@ -869,8 +894,22 @@ __global__ void computeAccelerationsD(
     bi.x = 0.0f;
     bi.y = 0.0f;
     bi.z = 0.0f;
+    float psi = evaluateMexicanHat3D(0.0f, 0.0f, 0.0f);
+    float psiSum = psi;
+    float3 velW;
+    velW.x = vi.x*psi;
+    velW.y = vi.y*psi;
+    velW.z = vi.z*psi;
+    float massSum = 0.0f;gConfiguration.FluidParticleMass[resID];
+    float3 xc;
+    xc.x = 0.0f;gConfiguration.FluidParticleMass[resID]*xi.x;
+    xc.y = 0.0f;gConfiguration.FluidParticleMass[resID]*xi.y; 
+    xc.z = 0.0f;gConfiguration.FluidParticleMass[resID]*xi.z;
     int3 cc, cs, ce;
 
+    //--------------------------------------------------------------------------
+    // compute force contribution of the same domain
+    //--------------------------------------------------------------------------
     computeCoordinatesOff(
         cs, 
         xi, 
@@ -897,6 +936,10 @@ __global__ void computeAccelerationsD(
 
                 computeAccelerationCell(
                     fi,
+                    velW,
+                    psiSum,
+                    xc,
+                    massSum,
                     rhoi,
                     pi,
                     xi,
@@ -1004,10 +1047,42 @@ __global__ void computeAccelerationsD(
     dAccelerations[3*idx + 1] = fi.y/rhoi - 9.81f + bi.y;
     dAccelerations[3*idx + 2] = fi.z/rhoi + bi.z;
 
-    if (xi.x > 0.5f && dStates[idx] == 0 && resID == 0)
+    xc.x /= massSum;
+    xc.y /= massSum;
+    xc.z /= massSum;
+
+    float3 xd;
+    xd.x = xi.x - xc.x;
+    xd.y = xi.y - xc.y;
+    xd.z = xi.z - xc.z;
+    float disticm;
+
+    computeNorm(disticm, xd);
+
+    float ene = 1/(psiSum*psiSum*gConfiguration.EffectiveRadius[resID])*
+        (velW.x*velW.x + velW.y*velW.y + velW.z*velW.z);
+    
+    float maxEne = 300.0f;
+    ene = min(ene, maxEne);
+    
+    if (disticm < 0.0025f)
     {
-        dStates[idx] = 3;   // mark particle for splitting
+        dColorValues[idx] = 0.3f;
     }
+    else
+    {
+        dColorValues[idx] = ene/maxEne;    
+
+        if (ene == maxEne && dStates[idx] == 0 && resID == 0)
+        {
+           // dStates[idx] = 3;   // mark particle for splitting
+        }
+    }
+
+    //if (xi.x > 0.5f && dStates[idx] == 0 && resID == 0)
+    //{
+    //    dStates[idx] = 3;   // mark particle for splitting
+    //}
 }
 //------------------------------------------------------------------------------
 __global__ void integrateD(
@@ -1364,7 +1439,7 @@ Solver::Solver(
     CUDA::Free<float>(&dBoundaryPositions);
 }
 //------------------------------------------------------------------------------
-Solver::~Solver ()
+Solver::~Solver()
 {
     delete mFluidData[LOW_RES];
     delete mFluidData[HIGH_RES];
@@ -1398,6 +1473,7 @@ void Solver::Advance(float timeStep)
     this->computeDensities(LOW_RES);
     this->computeAccelerations(HIGH_RES);
     this->computeAccelerations(LOW_RES);
+    //CUDA::DumpArray<float>(mFluidData[LOW_RES]->Data->dColorValues, mFluidData[LOW_RES]->Data->NumParticles);
     CUDA::Memset<unsigned int>(mFluidData[HIGH_RES]->dNumParticles, 0, 1);
     CUDA::Memset<unsigned int>(mFluidData[LOW_RES]->dNumParticles, 0, 1);
     this->integrate(HIGH_RES, timeStep);
@@ -1510,6 +1586,7 @@ void Solver::computeAccelerations(unsigned char resID)
     computeAccelerationsD<<<mFluidData[resID]->GridDimensions, 
         mFluidData[resID]->BlockDimensions>>>(
         mFluidData[resID]->dAccelerations,
+        mFluidData[resID]->Data->dColorValues,
         mFluidData[resID]->dDensities,
         mFluidData[resID]->dPressures,
         mFluidData[resID]->dTempPositions,

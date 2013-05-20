@@ -1,5 +1,5 @@
-﻿Build started 5/18/2013 12:23:04 AM.
-     1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_SINGLE_SCALE\SPH2S_FINAL_SINGLE_SCALE.vcxproj" on node 2 (build target(s)).
+﻿Build started 5/20/2013 2:21:46 PM.
+     1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_SINGLE_SCALE\SPH2S_FINAL_SINGLE_SCALE.vcxproj" on node 3 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\SPH2S_FINAL_SINGLE_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
        AddCudaCompileDeps:
@@ -37,4 +37,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.15
+Time Elapsed 00:00:00.24
