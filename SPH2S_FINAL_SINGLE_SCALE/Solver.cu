@@ -1092,7 +1092,7 @@ void Solver::Advance (float timeStep)
     mBoundaryData.Data->Unmap();
     mFluidData.Data->Unmap();
     t.Stop();
-//    t.DumpElapsed();
+    t.DumpElapsed();
 }
 //------------------------------------------------------------------------------
 void Solver::computeNeighborhoods ()

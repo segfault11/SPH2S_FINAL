@@ -31,6 +31,24 @@
     <Filter Include="Renderer\SSFRenderer">
       <UniqueIdentifier>{493b0b1e-ca05-4d4b-be18-a16c1d296e71}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CGTK">
+      <UniqueIdentifier>{6e583a5d-4f9e-4538-b4ae-e160786ee0b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CGTK\GL">
+      <UniqueIdentifier>{318560fa-2e35-42e4-98e5-5dccd6081da8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CGTK\Error">
+      <UniqueIdentifier>{81c6841d-c300-4a1d-9f4a-153f3b0d44b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CGTK\GL\Texture">
+      <UniqueIdentifier>{e49eb84a-7b6f-421e-9d87-13ea982e862a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CGTK\GL\Framebuffer">
+      <UniqueIdentifier>{ee05b55b-0ba0-46a8-a2c8-500fecd832fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\SSFRenderer\Shader">
+      <UniqueIdentifier>{026b192a-d6f3-4271-b9f0-b04244705529}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cuda.cpp">
@@ -57,6 +75,18 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="VideoWriter\VideoWriter.cpp">
       <Filter>VideoWriter</Filter>
+    </ClCompile>
+    <ClCompile Include="CGTK\GL\Framebuffer\Framebuffer.cpp">
+      <Filter>CGTK\GL\Framebuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="CGTK\GL\Texture\Texture2D.cpp">
+      <Filter>CGTK\GL\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="CGTK\Error\Error.cpp">
+      <Filter>CGTK\Error</Filter>
+    </ClCompile>
+    <ClCompile Include="Geometry.cpp">
+      <Filter>Renderer\SSFRenderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -93,6 +123,18 @@
     <ClInclude Include="SSFRenderer.h">
       <Filter>Renderer\SSFRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="CGTK\CGTK.h">
+      <Filter>CGTK</Filter>
+    </ClInclude>
+    <ClInclude Include="CGTK\GL\Framebuffer\Framebuffer.h">
+      <Filter>CGTK\GL\Framebuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="CGTK\GL\Texture\Texture2D.h">
+      <Filter>CGTK\GL\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="CGTK\Error\Error.h">
+      <Filter>CGTK\Error</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="RendererVertex.glsl">
@@ -111,22 +153,28 @@
       <Filter>Renderer\BoxRenderer</Filter>
     </None>
     <None Include="SSFRendererCompositingFragment.glsl">
-      <Filter>Renderer\SSFRenderer</Filter>
-    </None>
-    <None Include="SSFRendererCompositingVertex.glsl">
-      <Filter>Renderer\SSFRenderer</Filter>
-    </None>
-    <None Include="SSFRendererDepthFragment.glsl">
-      <Filter>Renderer\SSFRenderer</Filter>
-    </None>
-    <None Include="SSFRendererSphereGeometry.glsl">
-      <Filter>Renderer\SSFRenderer</Filter>
-    </None>
-    <None Include="SSFRendererSphereVertex.glsl">
-      <Filter>Renderer\SSFRenderer</Filter>
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
     </None>
     <None Include="SSFRendererThicknessFragment.glsl">
-      <Filter>Renderer\SSFRenderer</Filter>
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
+    </None>
+    <None Include="SSFRendererCompositingVertex.glsl">
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
+    </None>
+    <None Include="SSFRendererDepthFragment.glsl">
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
+    </None>
+    <None Include="SSFRendererSphereGeometry.glsl">
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
+    </None>
+    <None Include="SSFRendererSphereVertex.glsl">
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
+    </None>
+    <None Include="SSFRendererSceneFragment.glsl">
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
+    </None>
+    <None Include="SSFRendererSceneVertex.glsl">
+      <Filter>Renderer\SSFRenderer\Shader</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -9,7 +9,6 @@ uniform sampler2D uSceneSampler;
 uniform mat4 uProjMat;
 uniform float uTexSizeX;
 uniform float uTexSizeY;
-
 uniform float uScreenWidth;
 uniform float uScreenHeight;
 //------------------------------------------------------------------------------
@@ -45,7 +44,7 @@ void main()
     vec3 posView = getViewPos(texCoord);
 
 
-    // if this fragment does not belong to the fluid, just render the backgroud
+    // if this fragment does not belong to the fluid, just render the background
     if (posView.z == 0.0f)
     {
         outFragOut = vec4(colorEnv, 1.0f);

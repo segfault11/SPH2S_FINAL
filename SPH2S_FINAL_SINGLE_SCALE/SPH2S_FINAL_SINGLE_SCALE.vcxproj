@@ -45,14 +45,14 @@
   <ItemGroup>
     <None Include="BoxRendererFragment.glsl" />
     <None Include="BoxRendererVertex.glsl" />
-    <None Include="SceneFragment.glsl" />
-    <None Include="SceneVertex.glsl" />
     <None Include="RendererFragment.glsl" />
     <None Include="RendererGeometry.glsl" />
     <None Include="RendererVertex.glsl" />
     <None Include="SSFRendererCompositingFragment.glsl" />
     <None Include="SSFRendererCompositingVertex.glsl" />
     <None Include="SSFRendererDepthFragment.glsl" />
+    <None Include="SSFRendererSceneFragment.glsl" />
+    <None Include="SSFRendererSceneVertex.glsl" />
     <None Include="SSFRendererSphereGeometry.glsl" />
     <None Include="SSFRendererSphereVertex.glsl" />
     <None Include="SSFRendererThicknessFragment.glsl" />

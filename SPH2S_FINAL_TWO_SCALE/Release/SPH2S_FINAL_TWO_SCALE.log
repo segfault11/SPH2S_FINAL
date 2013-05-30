@@ -1,9 +1,9 @@
-﻿Build started 5/29/2013 10:41:52 AM.
+﻿Build started 5/30/2013 6:57:00 PM.
      1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SPH2S_FINAL_TWO_SCALE.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\SPH2S_FINAL_TWO_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
        AddCudaCompileDeps:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /D_MBCS /IC:\OpenCV2.1\include /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu 
+       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompileDeps:
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /D_MBCS /IC:\OpenCV2.1\include /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SSFRenderer.cu 
        AddCudaCompilePropsDeps:
@@ -11,32 +11,21 @@
        AddCudaCompilePropsDeps:
        Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
        CudaBuild:
-         Compiling CUDA source file Solver.cu...
-         cmd.exe /C "C:\Users\Arno\AppData\Local\Temp\841b7f09a81042d180e2c62069237525.cmd"
-         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\OpenCV2.1\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\Solver.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu"
-         
-         C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\OpenCV2.1\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\Solver.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\Solver.cu" 
-         Solver.cu
-         tmpxft_00000c40_00000000-2_Solver.cudafe1.gpu
-         tmpxft_00000c40_00000000-7_Solver.cudafe2.gpu
-         Solver.cu
-         tmpxft_00000c40_00000000-2_Solver.cudafe1.cpp
-         tmpxft_00000c40_00000000-12_Solver.ii
-     1>c:\users\arno\documents\projects\sph2s_final\sph2s_final_two_scale\Solver.h(30): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+       Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        CudaBuild:
          Compiling CUDA source file SSFRenderer.cu...
-         cmd.exe /C "C:\Users\Arno\AppData\Local\Temp\d7292a11a3e14692b634299d3105b5a9.cmd"
+         cmd.exe /C "C:\Users\Arno\AppData\Local\Temp\9333bb4b671c409a8d423b9bbf3ac261.cmd"
          "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\OpenCV2.1\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\SSFRenderer.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SSFRenderer.cu"
          
          C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\OpenCV2.1\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\SSFRenderer.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SSFRenderer.cu" 
          SSFRenderer.cu
-     1>C:/Users/Arno/Documents/Projects/SPH2S_FINAL/SPH2S_FINAL_TWO_SCALE/SSFRenderer.cu(812): warning : function "createFramebufferObject(GLuint &, GLuint &, GLuint, unsigned int, unsigned int)" was declared but never referenced
+     1>C:/Users/Arno/Documents/Projects/SPH2S_FINAL/SPH2S_FINAL_TWO_SCALE/SSFRenderer.cu(855): warning : function "createFramebufferObject(GLuint &, GLuint &, GLuint, unsigned int, unsigned int)" was declared but never referenced
          
-         tmpxft_00001ca8_00000000-2_SSFRenderer.cudafe1.gpu
-         tmpxft_00001ca8_00000000-7_SSFRenderer.cudafe2.gpu
+         tmpxft_00001c94_00000000-2_SSFRenderer.cudafe1.gpu
+         tmpxft_00001c94_00000000-7_SSFRenderer.cudafe2.gpu
          SSFRenderer.cu
-         tmpxft_00001ca8_00000000-2_SSFRenderer.cudafe1.cpp
-         tmpxft_00001ca8_00000000-12_SSFRenderer.ii
+         tmpxft_00001c94_00000000-2_SSFRenderer.cudafe1.cpp
+         tmpxft_00001c94_00000000-12_SSFRenderer.ii
        ClCompile:
          All outputs are up-to-date.
        ManifestResourceCompile:
@@ -46,7 +35,11 @@
          Release\SSFRenderer.cu.obj
          Release\SPH2S_FINAL_TWO_SCALE.exe.embed.manifest.res
          Release\BoxRenderer.obj
+         Release\Error.obj
+         Release\Framebuffer.obj
+         Release\Texture2D.obj
          Release\cuda.obj
+         Release\Geometry.obj
          Release\main.obj
          Release\Camera.obj
          Release\OpenGL.obj
@@ -78,4 +71,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:32.73
+Time Elapsed 00:00:13.04

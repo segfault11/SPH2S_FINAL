@@ -324,9 +324,9 @@ SSFRenderer::SSFRenderer(
     glUniform1i(loc, 1);
     loc = glGetUniformLocation(mCompositingProgram, "uSceneSampler");
     glUniform1i(loc, 2);
-    loc = glGetUniformLocation(mRenderThicknessProgram, "uScreenWidth");
+    loc = glGetUniformLocation(mCompositingProgram, "uScreenWidth");
     glUniform1f(loc, (float)mWidth);
-    loc = glGetUniformLocation(mRenderThicknessProgram, "uScreenHeight");
+    loc = glGetUniformLocation(mCompositingProgram, "uScreenHeight");
     glUniform1f(loc, (float)mHeight);
     float texSizeX = 1.0f/static_cast<float>(mWidth);
     float texSizeY = 1.0f/static_cast<float>(mHeight);
@@ -382,8 +382,16 @@ SSFRenderer::SSFRenderer(
     // INIT RESOURCES FOR THE BACKGROUND SCENE
     // create the program for rendering
     mSceneProgram = glCreateProgram();
-    GL::AttachShader(mSceneProgram, "SceneVertex.glsl", GL_VERTEX_SHADER);
-    GL::AttachShader(mSceneProgram, "SceneFragment.glsl", GL_FRAGMENT_SHADER);
+    GL::AttachShader(
+        mSceneProgram, 
+        "SSFRendererSceneVertex.glsl", 
+        GL_VERTEX_SHADER
+    );
+    GL::AttachShader(
+        mSceneProgram, 
+        "SSFRendererSceneFragment.glsl", 
+        GL_FRAGMENT_SHADER
+    );
     GL::BindAttribLocation(mSceneProgram, "inPosition", 0);
     GL::BindAttribLocation(mSceneProgram, "inNormal", 1);
     GL::BindFragDataLocation(mSceneProgram, "outFragment", 0);
@@ -422,7 +430,6 @@ SSFRenderer::~SSFRenderer()
     glDeleteProgram(mSceneProgram);
     CUDA::Free<float>(&mdTempData[0]);
     CUDA::Free<float>(&mdTempData[1]);
-  
     delete mSceneTexture;
     delete mSceneFramebuffer;
 

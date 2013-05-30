@@ -96,6 +96,67 @@ void ParticleData::Unmap ()
     CUDA::GL::UnmapResources(3, mGraphicsResources);
 }
 //------------------------------------------------------------------------------
+ParticleData* ParticleData::Union(
+    const ParticleData* a, 
+    const ParticleData* b
+)
+{
+    // Creates a new ParticleData object that contains particle data of two 
+    // other ParticleData objects.
+
+    if (a == NULL || b == NULL)
+    {
+        return NULL;
+    }
+
+    unsigned int maxParticles = a->MaxParticles + b->MaxParticles;
+    
+    // allocate new particle data
+    ParticleData* result = new ParticleData(maxParticles);
+
+    // copy positions data from particle data a and b to the result buffer
+    // object
+    glBindBuffer(GL_COPY_WRITE_BUFFER, result->PositionsVBO);
+    glBindBuffer(GL_COPY_READ_BUFFER, a->PositionsVBO);
+    glCopyBufferSubData(
+        GL_COPY_READ_BUFFER, 
+        GL_COPY_WRITE_BUFFER,
+        0,
+        0,
+        sizeof(float)*3*a->NumParticles
+    );
+    glBindBuffer(GL_COPY_READ_BUFFER, b->PositionsVBO);
+    glCopyBufferSubData(
+        GL_COPY_READ_BUFFER, 
+        GL_COPY_WRITE_BUFFER,
+        0,
+        sizeof(float)*3*a->NumParticles,
+        sizeof(float)*3*b->NumParticles
+    );
+
+    // copy color values data from particle data a and b to the result buffer
+    // object
+    glBindBuffer(GL_COPY_WRITE_BUFFER, result->ColorValuesVBO);
+    glBindBuffer(GL_COPY_READ_BUFFER, a->ColorValuesVBO);
+    glCopyBufferSubData(
+        GL_COPY_READ_BUFFER, 
+        GL_COPY_WRITE_BUFFER,
+        0,
+        0,
+        sizeof(float)*a->NumParticles
+    );
+    glBindBuffer(GL_COPY_READ_BUFFER, b->ColorValuesVBO);
+    glCopyBufferSubData(
+        GL_COPY_READ_BUFFER, 
+        GL_COPY_WRITE_BUFFER,
+        0,
+        sizeof(float)*a->NumParticles,
+        sizeof(float)*b->NumParticles
+    );
+
+    return result;
+}
+//------------------------------------------------------------------------------
 ParticleData* ParticleData::CreateParticleBox (const Grid& grid)
 {
     unsigned int numParticles = Grid::ComputeNumGridCells(grid);

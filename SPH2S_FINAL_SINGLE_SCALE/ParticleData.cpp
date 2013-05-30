@@ -65,14 +65,14 @@ void ParticleData::Unmap ()
     CUDA::GL::UnmapResources(2, mGraphicsResources);
 }
 //------------------------------------------------------------------------------
-//! Creates a new ParticleData object that contains particle data of two other
-//! ParticleData objects.
-//------------------------------------------------------------------------------
 ParticleData* ParticleData::Union(
     const ParticleData* a, 
     const ParticleData* b
 )
 {
+    // Creates a new ParticleData object that contains particle data of two 
+    // other ParticleData objects.
+
     if (a == NULL || b == NULL)
     {
         return NULL;

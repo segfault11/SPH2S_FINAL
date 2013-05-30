@@ -170,10 +170,10 @@
     <None Include="SSFRendererCompositingFragment.glsl">
       <Filter>Renderer\SSFRenderer\Shader</Filter>
     </None>
-    <None Include="SceneFragment.glsl">
+    <None Include="SSFRendererSceneFragment.glsl">
       <Filter>Renderer\SSFRenderer\Shader</Filter>
     </None>
-    <None Include="SceneVertex.glsl">
+    <None Include="SSFRendererSceneVertex.glsl">
       <Filter>Renderer\SSFRenderer\Shader</Filter>
     </None>
   </ItemGroup>

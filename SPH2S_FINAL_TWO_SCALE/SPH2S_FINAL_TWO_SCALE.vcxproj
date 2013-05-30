@@ -12,7 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoxRenderer.cpp" />
+    <ClCompile Include="CGTK\Error\Error.cpp" />
+    <ClCompile Include="CGTK\GL\Framebuffer\Framebuffer.cpp" />
+    <ClCompile Include="CGTK\GL\Texture\Texture2D.cpp" />
     <ClCompile Include="cuda.cpp" />
+    <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenGL\Camera.cpp" />
     <ClCompile Include="OpenGL\OpenGL.cpp" />
@@ -23,6 +27,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoxRenderer.h" />
+    <ClInclude Include="CGTK\CGTK.h" />
+    <ClInclude Include="CGTK\Error\Error.h" />
+    <ClInclude Include="CGTK\GL\Framebuffer\Framebuffer.h" />
+    <ClInclude Include="CGTK\GL\Texture\Texture2D.h" />
     <ClInclude Include="cuda.h" />
     <ClInclude Include="Grid.h" />
     <ClInclude Include="OpenGL\Camera.h" />
@@ -43,6 +51,8 @@
     <None Include="SSFRendererCompositingFragment.glsl" />
     <None Include="SSFRendererCompositingVertex.glsl" />
     <None Include="SSFRendererDepthFragment.glsl" />
+    <None Include="SSFRendererSceneFragment.glsl" />
+    <None Include="SSFRendererSceneVertex.glsl" />
     <None Include="SSFRendererSphereGeometry.glsl" />
     <None Include="SSFRendererSphereVertex.glsl" />
     <None Include="SSFRendererThicknessFragment.glsl" />

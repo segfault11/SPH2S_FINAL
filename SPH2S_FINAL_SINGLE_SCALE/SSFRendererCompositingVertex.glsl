@@ -8,7 +8,7 @@ uniform sampler2D uThicknessSampler;
 uniform sampler2D uSceneSampler;
 uniform mat4 uProjMat;
 uniform float uTexSizeX;
-uniform float uTexSizeZ;
+uniform float uTexSizeY;
 //------------------------------------------------------------------------------
 in vec2 inTexCoord;
 //------------------------------------------------------------------------------

@@ -190,8 +190,9 @@ void initSim ()
         boundaryGridB, 
         5
     );
-    
     gsBoundaryParticles = ParticleData::Union(boundaryA, boundaryB);
+    delete boundaryA;
+    delete boundaryB;
 
     // INIT CAMERA
     gsCamera = new GL::Camera(
@@ -203,7 +204,6 @@ void initSim ()
         0.1f,
         10.0f
     );
-
 
     // INIT RENDERER
     RendererConfig rendererConfig(

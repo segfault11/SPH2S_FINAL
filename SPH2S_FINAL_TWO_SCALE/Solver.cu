@@ -1511,7 +1511,7 @@ void Solver::Advance(float timeStep)
     mFluidData[HIGH_RES]->Data->Unmap();
     mFluidData[LOW_RES]->Data->Unmap();
     t.Stop();
-    //t.DumpElapsed();
+    t.DumpElapsed();
     //std::system("pause");
 }
 //------------------------------------------------------------------------------
