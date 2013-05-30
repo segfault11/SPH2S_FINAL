@@ -236,6 +236,14 @@ inline void RegisterBuffer (
     CUDA_SAFE_CALL( cudaGraphicsGLRegisterBuffer(resource, buffer, flags) );
 }
 //------------------------------------------------------------------------------
+inline void UnregisterResource (
+    struct cudaGraphicsResource** resource 
+)
+{
+    CUDA_SAFE_CALL( cudaGraphicsUnregisterResource(*resource) );
+    *resource = NULL;
+}
+//------------------------------------------------------------------------------
 inline void MapResources (int count, cudaGraphicsResource_t* resources)
 {
     CUDA_SAFE_CALL (cudaGraphicsMapResources(count, resources) );

@@ -196,14 +196,154 @@ void GL::DumpLog(GLuint program)
 	free(log); 
 }
 //-----------------------------------------------------------------------------
-void GL::CreateBufferObject (GLuint& buffer, GLenum target, 
-    GLsizeiptr size, const GLvoid* data, GLenum usage)
+void GL::CreateBufferObject(
+    GLuint& buffer,
+    GLenum target, 
+    GLsizeiptr size,
+    const GLvoid* data, 
+    GLenum usage
+)
 {
     glGenBuffers(1, &buffer);
     glBindBuffer(target, buffer);
     glBufferData(target, size, data, usage);
 }
 //-----------------------------------------------------------------------------
+void GL::CreateFloatingPointTexture2D(
+    GLuint& texture,
+    unsigned int width,
+    unsigned int height,
+    unsigned char nChannels
+)
+{
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    switch (nChannels)
+    {
+        case 1:
+        	glTexImage2D(
+                GL_TEXTURE_2D, 0, GL_R32F, width, height, 
+                0, GL_RED, GL_FLOAT, 0
+            );
+            break;
+        
+        case 3:
+        	glTexImage2D(
+                GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 
+                0, GL_RGB, GL_FLOAT, 0
+            );
+            break;
+
+        case 4:
+        	glTexImage2D(
+                GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 
+                0, GL_RGBA, GL_FLOAT, 0
+            );
+            break;
+        
+        default:
+            // report error
+            break;
+    }
+}
+//------------------------------------------------------------------------------
+void GL::CreateTexture2D(	
+    GLuint& texture,
+ 	GLint level,
+ 	GLint internalFormat,
+ 	GLsizei width,
+ 	GLsizei height,
+ 	GLint border,
+ 	GLenum format,
+ 	GLenum type,
+ 	const GLvoid* data
+)
+{
+  	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        level, 
+        internalFormat, 
+        width, 
+        height, 
+        border, 
+        format, 
+        type, 
+        data
+    );   
+}
+//------------------------------------------------------------------------------
+void GL::SaveFloatingPointTexturer2DToPPM(
+    const char* filename,
+    GLuint texture,
+    unsigned int width,
+    unsigned int height,
+    unsigned char nChannels,
+    float min,
+    float max
+)
+{
+    glBindTexture(GL_TEXTURE_2D, texture);
+    float numData = width*height*nChannels;
+    float* data = new float[numData];
+ 
+    switch (nChannels)
+    {
+        case 1:
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, data);
+            break;
+        case 3:
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, data);
+            break;
+        default:
+            // report error
+            break;
+    }
+
+    for (unsigned int i = 0; i < numData; i++)
+    {
+        float color = data[i];
+        data[i] = (color - min)/(max - min);
+    }
+ 
+    FILE* file = fopen(filename, "w");
+    fprintf(file, "P3\n");
+    fprintf(file, "%d %d\n", width, height);
+    fprintf(file, "255\n");
+    
+    for (unsigned int i = 0; i < width*height; i++)
+    {
+        int pixel[3];
+        
+        if (nChannels == 1)
+        {
+            pixel[0] = static_cast<int>(data[i]*255.0f);
+            pixel[1] = static_cast<int>(data[i]*255.0f);
+            pixel[2] = static_cast<int>(data[i]*255.0f);
+        }
+        else if (nChannels == 3)
+        {
+            pixel[0] = static_cast<int>(data[3*i + 0])*255;
+            pixel[1] = static_cast<int>(data[3*i + 1])*255;
+            pixel[2] = static_cast<int>(data[3*i + 2])*255;
+        }
+    
+        fprintf(file, "%d %d %d\n", pixel[0], pixel[1], pixel[2]);
+    }
+    
+    fclose(file);
+    
+    delete[] data;
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+//------------------------------------------------------------------------------
 char* readFile(const char* filename) 
 {
     FILE* pFile;

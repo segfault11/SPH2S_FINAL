@@ -35,17 +35,17 @@ void main ()
 	EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(-dx, +dy, 0.0f, 0.0f);
-	outGeometryData.TexCoord = vec2(-1.0f, 1.0f);
+	outGeometryData.TexCoord = vec2(0.0f, 1.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
 	EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(+dx, -dy, 0.0f, 0.0f);
-	outGeometryData.TexCoord = vec2(1.0f, -1.0f);
+	outGeometryData.TexCoord = vec2(1.0f, 0.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
 	EmitVertex();
 
     gl_Position = gl_in[0].gl_Position + vec4(-dx, -dy, 0.0f, 0.0f);
-	outGeometryData.TexCoord = vec2(-1.0f, -1.0f);
+	outGeometryData.TexCoord = vec2(0.0f, 0.0f);
     outGeometryData.PosView = inVertexData[0].PosView;
 	EmitVertex();
 

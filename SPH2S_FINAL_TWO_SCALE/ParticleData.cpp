@@ -10,8 +10,8 @@ ParticleData::ParticleData (unsigned int maxParticles)
 {
     // initilizes the particle data, this constructor sets all particles active
 
-    // allocate vertex buffer objects for the positions, colors and the ids of 
-    // the particles, after allocation register them with cuda
+    // allocate vertex buffer objects for the positions, colors and the states 
+    // of the particles, after allocation register them with cuda
     GL::CreateBufferObject(
         PositionsVBO, 
         GL_ARRAY_BUFFER, 
@@ -19,11 +19,13 @@ ParticleData::ParticleData (unsigned int maxParticles)
         NULL, 
         GL_DYNAMIC_DRAW
     );
+
     CUDA::GL::RegisterBuffer(
         &mGraphicsResources[0], 
         PositionsVBO, 
         cudaGraphicsMapFlagsNone
     );
+
     GL::CreateBufferObject(
         ColorValuesVBO, 
         GL_ARRAY_BUFFER, 
@@ -31,38 +33,67 @@ ParticleData::ParticleData (unsigned int maxParticles)
         NULL, 
         GL_DYNAMIC_DRAW
     );
+
     CUDA::GL::RegisterBuffer(
         &mGraphicsResources[1], 
         ColorValuesVBO, 
         cudaGraphicsMapFlagsNone
     );
- }
+
+    // create a vbo for the states of the particle, set all states to zero
+    int* states = new int[maxParticles];
+    memset(states, 0, sizeof(int)*maxParticles);
+
+    GL::CreateBufferObject(
+        StatesVBO, 
+        GL_ARRAY_BUFFER, 
+        sizeof(int)*maxParticles, 
+        states, 
+        GL_DYNAMIC_DRAW
+    );
+
+    CUDA::GL::RegisterBuffer(
+        &mGraphicsResources[2], 
+        StatesVBO, 
+        cudaGraphicsMapFlagsNone
+    );
+
+    delete states;
+}
 //------------------------------------------------------------------------------
 ParticleData::~ParticleData ()
 {
     glDeleteBuffers(1, &PositionsVBO);
     glDeleteBuffers(1, &ColorValuesVBO);
+    CUDA::Free(&dStates);
 }
 //------------------------------------------------------------------------------
 void ParticleData::Map ()
 {
     CUDA::GL::MapResources(
-        2, 
+        3, 
         mGraphicsResources
     );
+
     CUDA::GL::GetMappedPointer<float>(
         &dPositions, 
         mGraphicsResources[0]
     );
+
     CUDA::GL::GetMappedPointer<float>(
         &dColorValues, 
         mGraphicsResources[1]
+    );
+
+    CUDA::GL::GetMappedPointer<int>(
+        &dStates, 
+        mGraphicsResources[2]
     );
 }
 //------------------------------------------------------------------------------
 void ParticleData::Unmap ()
 {
-    CUDA::GL::UnmapResources(2, mGraphicsResources);
+    CUDA::GL::UnmapResources(3, mGraphicsResources);
 }
 //------------------------------------------------------------------------------
 ParticleData* ParticleData::CreateParticleBox (const Grid& grid)

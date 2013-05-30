@@ -34,13 +34,15 @@ public:
     // CUDA part
     float* dPositions;
     float* dColorValues;
+    int* dStates;
 
     // OpenGL part
     GLuint PositionsVBO;
     GLuint ColorValuesVBO;
+    GLuint StatesVBO;
 
 private:
     mutable bool mIsMapped; // is the particle date mapped to CUDA memory?
-    cudaGraphicsResource_t mGraphicsResources[2];
+    cudaGraphicsResource_t mGraphicsResources[3];
 };
 //------------------------------------------------------------------------------

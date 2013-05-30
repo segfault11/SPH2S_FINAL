@@ -90,6 +90,9 @@
     <ClInclude Include="VideoWriter\VideoWriter.h">
       <Filter>VideoWriter</Filter>
     </ClInclude>
+    <ClInclude Include="SSFRenderer.h">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="RendererVertex.glsl">
@@ -107,10 +110,31 @@
     <None Include="BoxRendererFragment.glsl">
       <Filter>Renderer\BoxRenderer</Filter>
     </None>
+    <None Include="SSFRendererCompositingFragment.glsl">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </None>
+    <None Include="SSFRendererCompositingVertex.glsl">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </None>
+    <None Include="SSFRendererDepthFragment.glsl">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </None>
+    <None Include="SSFRendererSphereGeometry.glsl">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </None>
+    <None Include="SSFRendererSphereVertex.glsl">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </None>
+    <None Include="SSFRendererThicknessFragment.glsl">
+      <Filter>Renderer\SSFRenderer</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Solver.cu">
       <Filter>Solver</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SSFRenderer.cu">
+      <Filter>Renderer\SSFRenderer</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

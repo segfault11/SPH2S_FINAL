@@ -38,9 +38,7 @@ void main ()
     n.x = 2.0f*inGeometryData.TexCoord.x - 1.0f;
     n.y = 2.0f*inGeometryData.TexCoord.y - 1.0f;
     float mag2 = dot(n.xy, n.xy);
-    
-
-
+    //
     //if (inGeometryData.PosView.z > -1.7f)
     //{
     //    discard;

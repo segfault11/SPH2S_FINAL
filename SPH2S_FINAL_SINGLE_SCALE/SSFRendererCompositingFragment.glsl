@@ -5,15 +5,13 @@
 //------------------------------------------------------------------------------
 uniform sampler2D uDepthSampler;
 uniform sampler2D uThicknessSampler;
+uniform sampler2D uSceneSampler;
 uniform mat4 uProjMat;
 uniform float uTexSizeX;
 uniform float uTexSizeY;
-//------------------------------------------------------------------------------
-in VertexData
-{
-    vec2 TexCoord;
-}
-inVertexData;
+
+uniform float uScreenWidth;
+uniform float uScreenHeight;
 //------------------------------------------------------------------------------
 out vec4 outFragOut;
 //------------------------------------------------------------------------------
@@ -31,27 +29,36 @@ vec3 getViewPos(vec2 texCoord)
 //------------------------------------------------------------------------------
 void main()
 {
-    vec3 colorFluid = vec3(0.0f, 0.5f, 0.8f);
-    vec3 colorEnv = vec3(1.0f, 1.0f, 1.0f);
+    vec3 colorFluid = vec3(0.0f, 0.4f, 1.0f);
+
+    vec2 texCoord;
+    texCoord.x = gl_FragCoord.x/uScreenWidth;
+    texCoord.y = gl_FragCoord.y/uScreenHeight;
+
+    vec3 colorEnv = texture(uSceneSampler, texCoord).rgb;
+
 
     //--------------------------------------------------------------------------
     // reconstruct the view space normal of the fragment
     //--------------------------------------------------------------------------
 
-    vec3 posView = getViewPos(inVertexData.TexCoord);
+    vec3 posView = getViewPos(texCoord);
 
+
+    // if this fragment does not belong to the fluid, just render the backgroud
     if (posView.z == 0.0f)
     {
-        discard;
+        outFragOut = vec4(colorEnv, 1.0f);
+        return;
     }
 
-    vec3 ddx = getViewPos(inVertexData.TexCoord + vec2(uTexSizeX, 0.0f)) - 
+    vec3 ddx = getViewPos(texCoord + vec2(uTexSizeX, 0.0f)) - 
         posView;
-    vec3 ddx2 = -getViewPos(inVertexData.TexCoord - vec2(uTexSizeX, 0.0f)) + 
+    vec3 ddx2 = -getViewPos(texCoord - vec2(uTexSizeX, 0.0f)) + 
         posView;
-    vec3 ddy = getViewPos(inVertexData.TexCoord + vec2(0.0f, uTexSizeY)) - 
+    vec3 ddy = getViewPos(texCoord + vec2(0.0f, uTexSizeY)) - 
         posView;
-    vec3 ddy2 = -getViewPos(inVertexData.TexCoord - vec2(0.0f, uTexSizeY)) + 
+    vec3 ddy2 = -getViewPos(texCoord - vec2(0.0f, uTexSizeY)) + 
         posView;
 
     if (abs(ddx.z) > abs(ddx2.z))
@@ -64,28 +71,28 @@ void main()
         ddy = ddy2;
     }
 
+
+    //float th = 0.025f;
+    //if (abs(ddx.z) > th || abs(ddy.z) > th)
+    //{
+    //    outFragOut = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    //    return;
+    //}
+
     vec3 n = cross(ddx, ddy);
     n = normalize(n);
 
-    //--------------------------------------------------------------------------
     // get thickness of the fragment
-    //--------------------------------------------------------------------------
-    float t = texture(uThicknessSampler, inVertexData.TexCoord).r;
+    float t = texture(uThicknessSampler, texCoord).r;
+    float tc = exp(-2.5f*t);
 
-    float tc = exp(-0.5f*t);
-
-
-    //--------------------------------------------------------------------------
     // compute fresnel reflectance (schlicks approx)
-    //--------------------------------------------------------------------------
     vec3 v = normalize(-posView);
     float a = 1.0f - max(0.0f, dot(v, n));
     float b = a*a*a*a*a;
     float rf = 0.02f + 0.98f*b; // rf0 for water is = 0.02f 
 
-
-
-
-    outFragOut = vec4((1 - rf)*mix(colorFluid, colorEnv, tc) + rf*colorEnv, 1.0f);
+    outFragOut = vec4((1 - rf)*mix(colorFluid, colorEnv, tc) + 
+        rf*colorEnv, 1.0f);
 }
 //------------------------------------------------------------------------------

@@ -34,6 +34,6 @@ void main ()
     vec4 posView = inGeometryData.PosView + uParticleRadius*vec4(n, 1.0f);
     outFragOutput = vec4(-posView.z, 0.0f, 0.0f, 0.0f);
     vec4 posClip = uProjMat*posView;
-    gl_FragDepth = posClip.z/posClip.w;
+    gl_FragDepth = 0.5f*(posClip.z/posClip.w + 1.0f);
 }
 //------------------------------------------------------------------------------

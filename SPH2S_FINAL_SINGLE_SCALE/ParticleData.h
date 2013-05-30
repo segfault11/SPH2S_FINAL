@@ -25,6 +25,12 @@ public:
         int border
     );
 
+    // Add other particle data to the system
+    static ParticleData* Union(
+        const ParticleData* a, 
+        const ParticleData* b
+    );
+
     // the number of currently active particles
     unsigned int NumParticles;
 

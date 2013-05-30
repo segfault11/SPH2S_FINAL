@@ -31,6 +31,7 @@
     <ClInclude Include="ParticleData.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Solver.h" />
+    <ClInclude Include="SSFRenderer.h" />
     <ClInclude Include="VideoWriter\VideoWriter.h" />
   </ItemGroup>
   <ItemGroup>
@@ -39,9 +40,16 @@
     <None Include="RendererFragment.glsl" />
     <None Include="RendererGeometry.glsl" />
     <None Include="RendererVertex.glsl" />
+    <None Include="SSFRendererCompositingFragment.glsl" />
+    <None Include="SSFRendererCompositingVertex.glsl" />
+    <None Include="SSFRendererDepthFragment.glsl" />
+    <None Include="SSFRendererSphereGeometry.glsl" />
+    <None Include="SSFRendererSphereVertex.glsl" />
+    <None Include="SSFRendererThicknessFragment.glsl" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Solver.cu" />
+    <CudaCompile Include="SSFRenderer.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F5474D12-BFB9-4EEB-9CBD-526ADD42334D}</ProjectGuid>

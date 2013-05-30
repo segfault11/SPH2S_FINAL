@@ -7,6 +7,7 @@
 #include "OpenGL\OpenGL.h"
 #include "cuda.h"
 #include "Renderer.h"
+#include "SSFRenderer.h"
 #include "ParticleData.h"
 #include "Solver.h" 
 #include "BoxRenderer.h"
@@ -21,20 +22,21 @@ static ParticleData* gsParticleDataHigh;
 static ParticleData* gsBoundaryParticles;
 static GL::Camera* gsCamera;
 static Renderer* gsRenderer;
+static SSFRenderer* gsSSFRenderer;
 static Renderer* gsRendererHigh;
 static Renderer* gsBoundaryRenderer;
 static BoxRenderer* gsBoxRenderer;
 static Solver* gsSolver;
-static VideoWriter gsVideoWriter("video.avi", WIDTH, HEIGHT);
+static VideoWriter* gsVideoWriter;
 static float gsDAngY = 0.0f;
 //------------------------------------------------------------------------------
-static void display ();
-static void keyboard (unsigned char key, int x, int y);
-void mouse (int button, int state, int x, int y);
-void mouseMotion (int x, int y);
-static void initGL ();
-static void initSim ();
-static void tearDownSim ();
+static void display();
+static void keyboard(unsigned char key, int x, int y);
+void mouse(int button, int state, int x, int y);
+void mouseMotion(int x, int y);
+static void initGL();
+static void initSim();
+static void tearDownSim();
 //------------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {  
@@ -63,13 +65,15 @@ int main (int argc, char* argv[])
 void display () 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gsSolver->Advance(0.0009f);
-    gsRenderer->SetCamera(*gsCamera);
-    gsRenderer->Render();
-    gsRendererHigh->SetCamera(*gsCamera);
-    gsRendererHigh->Render();
-    gsBoxRenderer->SetCamera(*gsCamera);
-    gsBoxRenderer->Render();
+    gsSolver->Advance(0.0011f);
+    //gsRenderer->SetCamera(*gsCamera);
+    //gsRenderer->Render();
+    //gsRendererHigh->SetCamera(*gsCamera);
+    //gsRendererHigh->Render();
+    //gsBoxRenderer->SetCamera(*gsCamera);
+    //gsBoxRenderer->Render();
+    gsSSFRenderer->SetCamera(*gsCamera);
+    gsSSFRenderer->Render();
     glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
@@ -77,10 +81,18 @@ void display ()
 
     static int i = 0;
 
-    if (i % 2 == 0)
+    if (i % 5 == 0)
     {
-        gsVideoWriter.CaptureFrame();
+        gsVideoWriter->CaptureFrame();
     }
+
+    if (i == 1000)
+    {
+        tearDownSim();
+        exit(0);
+    }
+
+    i++;
 }
 //------------------------------------------------------------------------------
 void mouse (int button, int state, int x, int y)
@@ -141,12 +153,13 @@ void initSim ()
     //--------------------------------------------------------------------------
     
     Grid particleGrid = Grid::MakeGrid(
-            make_float3(0.04f, 0.04f, 0.01f),
-            make_float3(0.35f, 0.75f, 0.39f),
+            make_float3(0.04f, 0.04f, -0.0f),
+            make_float3(0.35f, 0.75f, 0.4f),
             0.015f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
-
+    std::cout << "#particles " << gsParticleData->NumParticles << std::endl;
+//    std::system("pause");
     //Grid particleGridHigh = Grid::MakeGrid(
     //        make_float3(1.15f, 0.04f, 0.01f),
     //        make_float3(1.45f, 0.75f, 0.35f),
@@ -162,7 +175,7 @@ void initSim ()
 
     Grid boundaryGrid = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, -0.1f),
-            make_float3(1.5f, 1.5f, 0.5f),
+            make_float3(1.3f, 1.5f, 0.5f),
             0.015f
         );
     gsBoundaryParticles = ParticleData::CreateParticleBoxCanvas(
@@ -194,7 +207,7 @@ void initSim ()
             0.1f,
             0.5f,
             0.5f,
-            0.017f
+            0.008f
         );
     gsRenderer = new Renderer(gsParticleData, rendererConfig);
     gsRenderer->SetCamera(*gsCamera);
@@ -233,8 +246,12 @@ void initSim ()
             0.8f,                    // tension coefficient
             0.0125f                  // blend increment
         );
-    std::cout << std::powf(3.0f/4.0f*Grid::ComputeVolume(particleGrid)/gsParticleData->MaxParticles*1.0f/M_PI, 1.0f/3.0f) << std::endl;
 
+    //std::cout << gsParticleData->MaxParticles << std::endl;
+    //std::cout << std::powf(3.0f/4.0f*config.FluidParticleMass[0]/config.RestDensity*1.0f/M_PI, 1.0f/3.0f) << std::endl;
+    //std::system("pause");
+    
+    
     // create solver and set it active
     gsSolver = new Solver(
             gsParticleData, 
@@ -243,10 +260,21 @@ void initSim ()
             &config
         ); 
     gsSolver->Bind();
-    //--------------------------------------------------------------------------
+   
+    gsSSFRenderer = new SSFRenderer(
+            gsParticleData, 
+            gsParticleDataHigh, 
+            WIDTH, 
+            HEIGHT, 
+            0.010*1.2f
+        );
+
+
+    gsVideoWriter = new VideoWriter("video.avi", WIDTH, HEIGHT);
+
 }
 //------------------------------------------------------------------------------
-void tearDownSim ()
+void tearDownSim()
 {
     delete gsParticleData;
     delete gsParticleDataHigh;
@@ -255,5 +283,7 @@ void tearDownSim ()
     delete gsRenderer;
     delete gsRendererHigh;
     delete gsSolver;
+    delete gsSSFRenderer;
+    delete gsVideoWriter;
 }
 //------------------------------------------------------------------------------

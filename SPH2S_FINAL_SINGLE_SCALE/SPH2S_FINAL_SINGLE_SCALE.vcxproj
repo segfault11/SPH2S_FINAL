@@ -12,7 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoxRenderer.cpp" />
+    <ClCompile Include="CGTK\Error\Error.cpp" />
+    <ClCompile Include="CGTK\GL\Framebuffer\Framebuffer.cpp" />
+    <ClCompile Include="CGTK\GL\Texture\Texture2D.cpp" />
     <ClCompile Include="cuda.cpp" />
+    <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenGL\Camera.cpp" />
     <ClCompile Include="OpenGL\OpenGL.cpp" />
@@ -23,6 +27,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoxRenderer.h" />
+    <ClInclude Include="CGTK\CGTK.h" />
+    <ClInclude Include="CGTK\Error\Error.h" />
+    <ClInclude Include="CGTK\GL\Framebuffer\Framebuffer.h" />
+    <ClInclude Include="CGTK\GL\Texture\Texture2D.h" />
     <ClInclude Include="cuda.h" />
     <ClInclude Include="Grid.h" />
     <ClInclude Include="OpenGL\Camera.h" />
@@ -37,6 +45,8 @@
   <ItemGroup>
     <None Include="BoxRendererFragment.glsl" />
     <None Include="BoxRendererVertex.glsl" />
+    <None Include="SceneFragment.glsl" />
+    <None Include="SceneVertex.glsl" />
     <None Include="RendererFragment.glsl" />
     <None Include="RendererGeometry.glsl" />
     <None Include="RendererVertex.glsl" />

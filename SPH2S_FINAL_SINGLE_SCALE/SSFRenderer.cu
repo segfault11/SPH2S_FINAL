@@ -2,6 +2,7 @@
 //  SSFRenderer.cpp
 //------------------------------------------------------------------------------
 #include "SSFRenderer.h"
+#include "CGTK\Error\Error.h"
 //------------------------------------------------------------------------------
 texture<float, cudaTextureType2D, cudaReadModeElementType> gDepthMap;
 texture<float, cudaTextureType2D, cudaReadModeElementType> gThicknessMap;
@@ -54,8 +55,8 @@ __global__ void blurGaussX(
 
     for (int i = -blurRadius; i <= blurRadius; i++)
     {
-        float r = float(i)*blurScale;
-        float w = exp(-r*r);
+        float r = float(i);
+        float w = exp(-blurScale*r*r);
         float val = tex2D(gThicknessMap, u + i, v);
         res += val*w;
         norm += w;
@@ -94,8 +95,8 @@ __global__ void blurGaussY(
 
     for (int i = -blurRadius; i <= blurRadius; i++)
     {
-        float r = float(i)*blurScale;
-        float w = exp(-r*r);
+        float r = float(i);
+        float w = exp(-blurScale*r*r);
         float val = dTempResult[(v + i)*width + u];
         res += val*w;
         norm += w;
@@ -135,10 +136,10 @@ __global__ void blurBilateralX(
     for (int i = -blurRadius; i <= blurRadius; i++)
     {
         float val = tex2D(gDepthMap, u + i, v);
-        float r = float(i)*blurScale;
-        float w = exp(-r*r);
-        float r2 = (val - valc)*blurDepthFalloff;
-        float g = exp(-r2*r2);
+        float r = float(i);
+        float w = exp(-blurScale*r*r);
+        float r2 = (val - valc);
+        float g = exp(-blurDepthFalloff*r2*r2);
 
         res += val*w*g;
         norm += w*g;
@@ -179,10 +180,10 @@ __global__ void blurBilateralY(
     for (int i = -blurRadius; i <= blurRadius; i++)
     {
         float val = dTempResult[(v + i)*width + u];
-        float r = float(i)*blurScale;
-        float w = exp(-r*r);
-        float r2 = (val - valc)*blurDepthFalloff;
-        float g = exp(-r2*r2);
+        float r = float(i);
+        float w = exp(-blurScale*r*r);
+        float r2 = (val - valc);
+        float g = exp(-blurDepthFalloff*r2*r2);
 
         res += val*w*g;
         norm += w*g;
@@ -233,10 +234,7 @@ SSFRenderer::SSFRenderer(
     mHeight(height), 
     mBlockDimensions(16, 16, 1)
 {
-    //--------------------------------------------------------------------------
-    // init resources for creating the depth map
-    //--------------------------------------------------------------------------
-
+    // INIT RESOURCES FOR CREATING THE DEPTH MAP 
     // create a program that renders the depth map
     mRenderDepthProgram = createProgramDepthThick(
         "SSFRendererSphereVertex.glsl",
@@ -267,12 +265,9 @@ SSFRenderer::SSFRenderer(
         height
     );
 
-    //--------------------------------------------------------------------------
-    // init resources for creating the thickness map
-    //--------------------------------------------------------------------------
-
+    // INIT RESOURCES FOR CREATING THE THICKNESS MAP 
     // create a program that renders the thickness map
-    mRenderThicknessProgram= createProgramDepthThick(
+    mRenderThicknessProgram = createProgramDepthThick(
         "SSFRendererSphereVertex.glsl",
         "SSFRendererSphereGeometry.glsl",
         "SSFRendererThicknessFragment.glsl"
@@ -280,6 +275,12 @@ SSFRenderer::SSFRenderer(
     glUseProgram(mRenderThicknessProgram);
     loc = glGetUniformLocation(mRenderThicknessProgram, "uParticleRadius");
     glUniform1f(loc, particleRadius);
+    loc = glGetUniformLocation(mRenderThicknessProgram, "uScreenWidth");
+    glUniform1f(loc, (float)mWidth);
+    loc = glGetUniformLocation(mRenderThicknessProgram, "uScreenHeight");
+    glUniform1f(loc, (float)mHeight);
+    loc = glGetUniformLocation(mRenderThicknessProgram, "uSceneSampler");
+    glUniform1i(loc, 0);
 
     // create thickness texture
     GL::CreateFloatingPointTexture2D(
@@ -298,11 +299,7 @@ SSFRenderer::SSFRenderer(
         mThicknessTexture
     );
 
-
-    //--------------------------------------------------------------------------
-    // init resources for compositing
-    //--------------------------------------------------------------------------
-    
+    // INIT RESOURCES FOR COMPOSITING
     // create and initialize program for compositing
     mCompositingProgram = glCreateProgram();
     GL::AttachShader(
@@ -325,6 +322,12 @@ SSFRenderer::SSFRenderer(
     glUniform1i(loc, 0);
     loc = glGetUniformLocation(mCompositingProgram, "uThicknessSampler");
     glUniform1i(loc, 1);
+    loc = glGetUniformLocation(mCompositingProgram, "uSceneSampler");
+    glUniform1i(loc, 2);
+    loc = glGetUniformLocation(mRenderThicknessProgram, "uScreenWidth");
+    glUniform1f(loc, (float)mWidth);
+    loc = glGetUniformLocation(mRenderThicknessProgram, "uScreenHeight");
+    glUniform1f(loc, (float)mHeight);
     float texSizeX = 1.0f/static_cast<float>(mWidth);
     float texSizeY = 1.0f/static_cast<float>(mHeight);
     loc = glGetUniformLocation(mCompositingProgram, "uTexSizeX");
@@ -346,11 +349,7 @@ SSFRenderer::SSFRenderer(
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
-
-    //--------------------------------------------------------------------------
-    // Create Vertex array obj for the fluid particles
-    //--------------------------------------------------------------------------
-
+    // CREATE A VAO FOR THE FLUID PARTICLES
     // create vertex array object for the particle data
     glGenVertexArrays(1, &mParticleDataVertexArrayObject);
     glBindVertexArray(mParticleDataVertexArrayObject);
@@ -358,16 +357,11 @@ SSFRenderer::SSFRenderer(
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
-
-
-    //--------------------------------------------------------------------------
-    //  set up cuda resources for the blurring operations 
-    //--------------------------------------------------------------------------
+    //  SET UP CUDA STUFF FOR BLURRING THE THICKNESS AND DEPTH MAP  
 
     // allocate temp cuda buffers for smoothing
     CUDA::Alloc<float>(&mdTempData[0], width*height);
     CUDA::Alloc<float>(&mdTempData[1], width*height);
-
 
     // compute grid dimensions from block dims and width/height
     mGridDimensions.x = width/mBlockDimensions.x;
@@ -384,6 +378,36 @@ SSFRenderer::SSFRenderer(
     {
         std::cout << error.what() << std::endl;
     }
+
+    // INIT RESOURCES FOR THE BACKGROUND SCENE
+    // create the program for rendering
+    mSceneProgram = glCreateProgram();
+    GL::AttachShader(mSceneProgram, "SceneVertex.glsl", GL_VERTEX_SHADER);
+    GL::AttachShader(mSceneProgram, "SceneFragment.glsl", GL_FRAGMENT_SHADER);
+    GL::BindAttribLocation(mSceneProgram, "inPosition", 0);
+    GL::BindAttribLocation(mSceneProgram, "inNormal", 1);
+    GL::BindFragDataLocation(mSceneProgram, "outFragment", 0);
+    GL::LinkProgram(mSceneProgram);
+    GL::DumpLog(mSceneProgram);
+
+    // create the texture to render into
+    mSceneTexture = new CGTK::GL::Texture2D(
+            GL_RGBA32F, 
+            mWidth, 
+            mHeight, 
+            GL_RGBA, 
+            GL_FLOAT
+        );
+
+    // create a framebufferobject to render into
+    mSceneFramebuffer = new CGTK::GL::Framebuffer(
+            GL_DRAW_FRAMEBUFFER, 
+            mWidth, 
+            mHeight
+        );
+    mSceneFramebuffer->AttachDepthComponent();
+    mSceneFramebuffer->AttachTexture2D(*mSceneTexture, GL_COLOR_ATTACHMENT0);
+    mSceneFramebuffer->RegisterAttachments();
 }
 //------------------------------------------------------------------------------
 SSFRenderer::~SSFRenderer()
@@ -395,12 +419,38 @@ SSFRenderer::~SSFRenderer()
     glDeleteTextures(1, &mThicknessTexture);
     glDeleteFramebuffers(1, &mThicknessFramebufferObject);
     glDeleteProgram(mCompositingProgram);
+    glDeleteProgram(mSceneProgram);
     CUDA::Free<float>(&mdTempData[0]);
     CUDA::Free<float>(&mdTempData[1]);
+  
+    delete mSceneTexture;
+    delete mSceneFramebuffer;
+
+    for (unsigned int i = 0; i < mSceneGeometry.size(); i++)
+    {
+          delete mSceneGeometry[i];  
+    }
+
+    mSceneGeometry.clear();
 }
 //------------------------------------------------------------------------------
 void SSFRenderer::Render()
 {
+    // RENDER THE BACKGROUND SCENE
+    mSceneFramebuffer->Bind();
+    glUseProgram(mSceneProgram);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    for(unsigned int i = 0; i < mSceneGeometry.size(); i++)
+    {
+        mSceneGeometry[i]->Render();
+    }
+
+    mSceneFramebuffer->Unbind();
+
+    // RENDER DEPTH MAP
     glBindFramebuffer(GL_FRAMEBUFFER, mDepthFramebufferObject);
     glUseProgram(mRenderDepthProgram);
     glBindVertexArray(mParticleDataVertexArrayObject);
@@ -411,6 +461,7 @@ void SSFRenderer::Render()
     glDisable(GL_DEPTH_TEST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // RENDER THICKNESS MAP
     glBindFramebuffer(GL_FRAMEBUFFER, mThicknessFramebufferObject);
     glDisable(GL_DEPTH_TEST);
     glUseProgram(mRenderThicknessProgram);
@@ -420,29 +471,15 @@ void SSFRenderer::Render()
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_ONE, GL_ONE);
+    mSceneTexture->Bind(GL_TEXTURE0);
     glDrawArrays(GL_POINTS, 0, mParticleData->NumParticles);
     glDisable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    try 
-    {
-        this->blur();
-    }
-    catch (const std::runtime_error& error)
-    {
-        std::cout << error.what() << std::endl;
-        std::system("pause");
-    }
+    // BLUR DEPTH AND THICKNESS MAP
+    blur();
 
-    //saveFloatingPointTexturer2DToPPM(
-    //    "test3.ppm", 
-    //    mThicknessTexture, 
-    //    mWidth, 
-    //    mHeight, 
-    //    0.0f
-    //);
-    //std::system("pause");
-
+    // RENDER EVERYTHING
     glUseProgram(mCompositingProgram);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -450,26 +487,9 @@ void SSFRenderer::Render()
     glBindTexture(GL_TEXTURE_2D, mDepthTexture);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, mThicknessTexture);
+    mSceneTexture->Bind(GL_TEXTURE2);
     glBindVertexArray(mQuadVertexArrayObject);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    //saveFloatingPointTexturer2DToPPM(
-    //    "test.ppm", 
-    //    mDepthTexture, 
-    //    mWidth, 
-    //    mHeight, 
-    //    0.0f
-    //);
-
-    //saveFloatingPointTexturer2DToPPM(
-    //    "test3.ppm", 
-    //    mThicknessTexture, 
-    //    mWidth, 
-    //    mHeight, 
-    //    0.0f
-    //);
-    //std::system("pause");
-    
+    glDrawArrays(GL_TRIANGLES, 0, 6);    
 }
 //------------------------------------------------------------------------------
 void SSFRenderer::SetCamera(const GL::Camera& camera)
@@ -491,6 +511,28 @@ void SSFRenderer::SetCamera(const GL::Camera& camera)
     glUseProgram(mCompositingProgram);
     loc = glGetUniformLocation(mCompositingProgram, "uProjMat");
     glUniformMatrix4fv(loc, 1, false, projMat);
+    glUseProgram(mSceneProgram);
+    loc = glGetUniformLocation(mSceneProgram, "uProjMat");
+    glUniformMatrix4fv(loc, 1, false, projMat);
+    loc = glGetUniformLocation(mSceneProgram, "uViewMat");
+    glUniformMatrix4fv(loc, 1, false, viewMat);
+
+}
+//------------------------------------------------------------------------------
+void SSFRenderer::AddBox(            
+    const float3& startPoint, 
+    const float3& endPoint
+)
+{
+    Geometry* geometry = Geometry::CreateBox(startPoint, endPoint);
+
+    if (geometry == NULL)
+    {
+        CGTK::Error::ReportError("Could not allocate Geometry.");
+        return;
+    }
+
+    mSceneGeometry.push_back(geometry);
 }
 //------------------------------------------------------------------------------
 void SSFRenderer::blur()
@@ -519,33 +561,33 @@ void SSFRenderer::blur()
     );
     blurBilateralX<<<mGridDimensions, mBlockDimensions>>>(
         mdTempData[0],
-        3, 
-        0.2f,
-        20.0f,
+        15, 
+        0.0025f,
+        250.0f,
         mWidth,
         mHeight
     );
     blurBilateralY<<<mGridDimensions, mBlockDimensions>>>(
         mdTempData[1],
         mdTempData[0],
-        3, 
-        0.2f,
-        20.0f,
+        15,
+        0.0025f,
+        250.0f,
         mWidth,
         mHeight
     );
    
     // copy results to texture
-    CUDA_SAFE_INV( 
-        cudaMemcpyToArray(
-            texArray[0],
-            0, 
-            0, 
-            mdTempData[1], 
-            mWidth*mHeight*sizeof(float), 
-            cudaMemcpyDeviceToDevice
-        )
-    );
+    //CUDA_SAFE_INV( 
+    //    cudaMemcpyToArray(
+    //        texArray[0],
+    //        0, 
+    //        0, 
+    //        mdTempData[1], 
+    //        mWidth*mHeight*sizeof(float), 
+    //        cudaMemcpyDeviceToDevice
+    //    )
+    //);
     cudaUnbindTexture(mTextureReferences[0]);
 
 
@@ -568,16 +610,16 @@ void SSFRenderer::blur()
     );
     blurGaussX<<<mGridDimensions, mBlockDimensions>>>(
         mdTempData[0],
-        2, 
-        0.2f,
+        5, 
+        0.05f,
         mWidth,
         mHeight
     );
     blurGaussY<<<mGridDimensions, mBlockDimensions>>>(
         mdTempData[1],
         mdTempData[0],
-        2, 
-        0.2f,
+        5, 
+        0.05f,
         mWidth,
         mHeight
     );

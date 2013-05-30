@@ -85,8 +85,7 @@ class Solver
         unsigned int* dCellEnd;
         unsigned int NumGridCells;
 
-        unsigned char* dStates;
-        unsigned char* dTempStates;
+        int* dTempStates;
         float* dBlendCoefficients;
         float* dTempBlendCoefficients;
 
@@ -130,10 +129,10 @@ public:
     void Advance(float dt);
 
 private:
-    inline void computeNeighborhoods(unsigned char resID);
-    inline void computeDensities(unsigned char resID);
-    inline void computeAccelerations(unsigned char resID);
-    inline void integrate(unsigned char resID, float timeStep);
+    inline void computeNeighborhoods(int resID);
+    inline void computeDensities(int resID);
+    inline void computeAccelerations(int resID);
+    inline void integrate(int resID, float timeStep);
 
     SolverConfiguration mConfiguration;
     SPHParticleData* mFluidData[2];
