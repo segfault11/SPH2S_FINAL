@@ -1,11 +1,11 @@
-﻿Build started 5/30/2013 6:57:00 PM.
+﻿Build started 6/2/2013 4:12:22 PM.
      1>Project "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SPH2S_FINAL_TWO_SCALE.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\SPH2S_FINAL_TWO_SCALE.unsuccessfulbuild" because "AlwaysCreate" was specified.
        AddCudaCompileDeps:
        Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompileDeps:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /D_MBCS /IC:\OpenCV2.1\include /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SSFRenderer.cu 
+       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompilePropsDeps:
        Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompilePropsDeps:
@@ -13,21 +13,15 @@
        CudaBuild:
        Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        CudaBuild:
-         Compiling CUDA source file SSFRenderer.cu...
-         cmd.exe /C "C:\Users\Arno\AppData\Local\Temp\9333bb4b671c409a8d423b9bbf3ac261.cmd"
-         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\OpenCV2.1\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\SSFRenderer.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SSFRenderer.cu"
-         
-         C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin"  -I"C:\OpenCV2.1\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"     --keep-dir "Release" -maxrregcount=0  --machine 32 --compile     -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o "Release\SSFRenderer.cu.obj" "C:\Users\Arno\Documents\Projects\SPH2S_FINAL\SPH2S_FINAL_TWO_SCALE\SSFRenderer.cu" 
-         SSFRenderer.cu
-     1>C:/Users/Arno/Documents/Projects/SPH2S_FINAL/SPH2S_FINAL_TWO_SCALE/SSFRenderer.cu(855): warning : function "createFramebufferObject(GLuint &, GLuint &, GLuint, unsigned int, unsigned int)" was declared but never referenced
-         
-         tmpxft_00001c94_00000000-2_SSFRenderer.cudafe1.gpu
-         tmpxft_00001c94_00000000-7_SSFRenderer.cudafe2.gpu
-         SSFRenderer.cu
-         tmpxft_00001c94_00000000-2_SSFRenderer.cudafe1.cpp
-         tmpxft_00001c94_00000000-12_SSFRenderer.ii
+       Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        ClCompile:
-         All outputs are up-to-date.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /IC:\OpenCV2.1\include /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
+         main.cpp
+     1>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include\thrust/system/detail/error_category.inl(102): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(157) : see declaration of 'strerror'
+     1>c:\users\arno\documents\projects\sph2s_final\sph2s_final_two_scale\Solver.h(35): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+     1>main.cpp(262): warning C4305: 'argument' : truncation from 'double' to 'float'
+     1>main.cpp(267): warning C4305: 'argument' : truncation from 'double' to 'float'
        ManifestResourceCompile:
          All outputs are up-to-date.
        Link:
@@ -46,6 +40,7 @@
          Release\Vector3f.obj
          Release\ParticleData.obj
          Release\Renderer.obj
+         Release\ValueTable.obj
          Release\VideoWriter.obj
      1>LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
          Generating code
@@ -71,4 +66,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:13.04
+Time Elapsed 00:00:02.26

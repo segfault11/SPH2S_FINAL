@@ -199,6 +199,7 @@ public:
     void Start();
     void Stop();
     void DumpElapsed() const;
+    float GetElapsed() const;
 
 private:
     cudaEvent_t mStart;

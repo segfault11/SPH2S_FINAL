@@ -31,7 +31,7 @@ void main()
     vec2 texCoords;
     texCoords.x = gl_FragCoord.x/uScreenWidth;
     texCoords.y = gl_FragCoord.y/uScreenHeight;
-    vec3 colorFluid = 0.7f*vec3(0.0f, 0.45f, 0.72f);
+    vec3 colorFluid = vec3(0.0f, 0.4f, 1.0f);
     vec3 colorEnv = texture(uSceneSampler, texCoords).rgb;
     vec3 lightDir = vec3(1.0f, 1.0f, 1.0f);
 

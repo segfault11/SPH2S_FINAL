@@ -88,6 +88,9 @@
     <ClCompile Include="Geometry.cpp">
       <Filter>Renderer\SSFRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="ValueTable.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cuda.h">
@@ -134,6 +137,9 @@
     </ClInclude>
     <ClInclude Include="CGTK\Error\Error.h">
       <Filter>CGTK\Error</Filter>
+    </ClInclude>
+    <ClInclude Include="ValueTable.h">
+      <Filter>Util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

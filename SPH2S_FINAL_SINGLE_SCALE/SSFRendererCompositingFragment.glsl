@@ -29,18 +29,13 @@ vec3 getViewPos(vec2 texCoord)
 void main()
 {
     vec3 colorFluid = vec3(0.0f, 0.4f, 1.0f);
-
+    vec3 colorEnv = texture(uSceneSampler, texCoord).rgb;
     vec2 texCoord;
     texCoord.x = gl_FragCoord.x/uScreenWidth;
     texCoord.y = gl_FragCoord.y/uScreenHeight;
 
-    vec3 colorEnv = texture(uSceneSampler, texCoord).rgb;
 
-
-    //--------------------------------------------------------------------------
     // reconstruct the view space normal of the fragment
-    //--------------------------------------------------------------------------
-
     vec3 posView = getViewPos(texCoord);
 
 

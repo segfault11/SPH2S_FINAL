@@ -23,6 +23,7 @@
     <ClCompile Include="OpenGL\Vector3f.cpp" />
     <ClCompile Include="ParticleData.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="ValueTable.cpp" />
     <ClCompile Include="VideoWriter\VideoWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -40,6 +41,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Solver.h" />
     <ClInclude Include="SSFRenderer.h" />
+    <ClInclude Include="ValueTable.h" />
     <ClInclude Include="VideoWriter\VideoWriter.h" />
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,7 @@
 #include "ParticleData.h"
 #include "cuda.h"
 #include "Grid.h"
+#include "ValueTable.h"
 //------------------------------------------------------------------------------
 #define M_PI 3.14159265358979323846
 //------------------------------------------------------------------------------
@@ -133,9 +134,12 @@ private:
     inline void computeDensities(int resID);
     inline void computeAccelerations(int resID);
     inline void integrate(int resID, float timeStep);
+    inline void simpleIntegrate(int resID, float timeStep);
 
     SolverConfiguration mConfiguration;
     SPHParticleData* mFluidData[2];
     BoundaryParticleData* mBoundaryData;
+
+    ValueTable mValueTable;
 };
 //------------------------------------------------------------------------------

@@ -1082,6 +1082,84 @@ __global__ void computeAccelerationsD(
     }
 }
 //------------------------------------------------------------------------------
+__global__ void simpleIntegrateD(
+    float* dPositions, 
+    float* dVelocities, 
+    float* dAccelerations,
+    int* dStates,
+    float* dBlendCoefficients,
+    unsigned int* dActiveIDs,               // array of active particle ids
+    unsigned int* dNumParticles,            // counter var for active particles
+    const float* dTempPositions,
+    const float* dTempVelocities,
+    const int* dTempStates,
+    const float* dTempBlendCoefficients,
+    float timeStep,
+    unsigned int numParticles,
+    int resID
+)
+{
+    unsigned int idx = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if (idx >= numParticles)
+    {
+        return;
+    }
+
+    //--------------------------------------------------------------------------
+    // update posititions and velocities
+    //--------------------------------------------------------------------------
+
+    float3 xi;
+    xi.x = dTempPositions[3*idx + 0];
+    xi.y = dTempPositions[3*idx + 1];
+    xi.z = dTempPositions[3*idx + 2];
+    float3 vi;
+    vi.x = dTempVelocities[3*idx + 0];
+    vi.y = dTempVelocities[3*idx + 1];
+    vi.z = dTempVelocities[3*idx + 2];
+
+    vi.x += timeStep*dAccelerations[3*idx + 0]; 
+    vi.y += timeStep*dAccelerations[3*idx + 1]; 
+    vi.z += timeStep*dAccelerations[3*idx + 2]; 
+
+
+    // addjust the length of the velocity vector to avoid 
+    // small instabilities
+    float norm;
+    computeNorm(norm, vi);
+    float vscale = min(
+            norm, 
+            0.8f*gConfiguration.EffectiveRadius[resID]/timeStep
+        );
+    
+    vi.x *= vscale/norm;
+    vi.y *= vscale/norm;
+    vi.z *= vscale/norm;
+
+    xi.x += timeStep*vi.x;
+    xi.y += timeStep*vi.y;
+    xi.z += timeStep*vi.z;
+
+    // store new position and velocity of the particle
+    dPositions[3*idx + 0] = xi.x;
+    dPositions[3*idx + 1] = xi.y;
+    dPositions[3*idx + 2] = xi.z;
+
+    dVelocities[3*idx + 0] = vi.x;
+    dVelocities[3*idx + 1] = vi.y;
+    dVelocities[3*idx + 2] = vi.z;
+
+    int state = dTempStates[idx];
+    float blendCoeff = dTempBlendCoefficients[idx];
+    
+    dBlendCoefficients[idx] = blendCoeff;
+    dStates[idx] = state;
+
+    unsigned int i = atomicAdd(dNumParticles, 1);
+    dActiveIDs[i] = idx;
+}
+//------------------------------------------------------------------------------
 __global__ void integrateD(
     float* dPositions, 
     float* dVelocities, 
@@ -1467,6 +1545,7 @@ Solver::Solver(
 //------------------------------------------------------------------------------
 Solver::~Solver()
 {
+    mValueTable.Save("values_high.dat");
     delete mFluidData[LOW_RES];
     delete mFluidData[HIGH_RES];
     delete mBoundaryData;
@@ -1502,16 +1581,35 @@ void Solver::Advance(float timeStep)
     this->computeDensities(LOW_RES);
     this->computeAccelerations(HIGH_RES);
     this->computeAccelerations(LOW_RES);
-    //CUDA::DumpArray<float>(mFluidData[LOW_RES]->Data->dColorValues, mFluidData[LOW_RES]->Data->NumParticles);
+
+    //CUDA::Memset<unsigned int>(mFluidData[HIGH_RES]->dNumParticles, 0, 1);
+    //this->integrate(HIGH_RES, timeStep/2.0f);
+    //this->computeNeighborhoods(HIGH_RES);
+    //this->computeDensities(HIGH_RES);
+    //this->computeAccelerations(HIGH_RES);
+    
+    
     CUDA::Memset<unsigned int>(mFluidData[HIGH_RES]->dNumParticles, 0, 1);
-    CUDA::Memset<unsigned int>(mFluidData[LOW_RES]->dNumParticles, 0, 1);
     this->integrate(HIGH_RES, timeStep);
+    CUDA::Memset<unsigned int>(mFluidData[LOW_RES]->dNumParticles, 0, 1);
     this->integrate(LOW_RES, timeStep);
     mBoundaryData->Data->Unmap();
     mFluidData[HIGH_RES]->Data->Unmap();
     mFluidData[LOW_RES]->Data->Unmap();
     t.Stop();
-    t.DumpElapsed();
+    //t.DumpElapsed();
+
+
+    static float elapsedSimulationTime = 0.0f;
+    static float elapsedRealTime = 0.0f;
+    
+    elapsedSimulationTime += t.GetElapsed();
+    elapsedRealTime += timeStep;
+
+    mValueTable.AddValue(elapsedSimulationTime, elapsedRealTime*1000.0f);
+
+    std::cout << mFluidData[LOW_RES]->Data->NumParticles << "/" << mFluidData[HIGH_RES]->Data->NumParticles << std::endl;
+
     //std::system("pause");
 }
 //------------------------------------------------------------------------------
@@ -1664,6 +1762,32 @@ void Solver::integrate(int resID, float timeStep)
         mFluidData[resID]->dTempPositions,
         mFluidData[resID]->dTempVelocities,
         mFluidData[resID]->dDensities,
+        mFluidData[resID]->dTempStates,
+        mFluidData[resID]->dTempBlendCoefficients,
+        timeStep,
+        mFluidData[resID]->Data->NumParticles,
+        resID
+    );
+}
+//------------------------------------------------------------------------------
+void Solver::simpleIntegrate(int resID, float timeStep)
+{
+    if (!mFluidData[resID]->Data->NumParticles)
+    {
+        return;
+    }
+
+    simpleIntegrateD<<<mFluidData[resID]->GridDimensions, 
+        mFluidData[resID]->BlockDimensions>>>(
+        mFluidData[resID]->Data->dPositions,
+        mFluidData[resID]->dVelocities,
+        mFluidData[resID]->dAccelerations,
+        mFluidData[resID]->Data->dStates,
+        mFluidData[resID]->dBlendCoefficients,
+        mFluidData[resID]->dActiveIDs,
+        mFluidData[resID]->dNumParticles,
+        mFluidData[resID]->dTempPositions,
+        mFluidData[resID]->dTempVelocities,
         mFluidData[resID]->dTempStates,
         mFluidData[resID]->dTempBlendCoefficients,
         timeStep,

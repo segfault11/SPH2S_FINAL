@@ -65,7 +65,7 @@ int main (int argc, char* argv[])
 void display () 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    gsSolver->Advance(0.0011f);
+    gsSolver->Advance(0.001f);
     //gsRenderer->SetCamera(*gsCamera);
     //gsRenderer->Render();
     //gsRendererHigh->SetCamera(*gsCamera);
@@ -86,7 +86,7 @@ void display ()
         gsVideoWriter->CaptureFrame();
     }
 
-    if (i == 1000)
+    if (i == 2000)
     {
         tearDownSim();
         exit(0);
@@ -150,8 +150,8 @@ void initSim ()
 {
     // INIT PARTICLE DATA
     Grid particleGrid = Grid::MakeGrid(
-            make_float3(0.04f, 0.04f, -0.0f),
-            make_float3(0.35f, 0.75f, 0.4f),
+            make_float3(0.02f, 0.04f, -0.05f),
+            make_float3(0.35f, 0.75f, 0.45f),
             0.0075f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
@@ -162,12 +162,12 @@ void initSim ()
     Grid boundaryGridA = Grid::MakeGrid(
             make_float3(0.0f, 0.0f, -0.1f),
             make_float3(1.6f, 1.5f, 0.5f),
-            0.0075f
+            0.015f
         );
     Grid boundaryGridB = Grid::MakeGrid(
             make_float3(0.7f, 0.0f, 0.22f),
             make_float3(0.75f, 1.5f, 0.25f),
-            0.0075f
+            0.015f
         );
     ParticleData* boundaryA = ParticleData::CreateParticleBoxCanvas(
         boundaryGridA, 
@@ -239,9 +239,9 @@ void initSim ()
             0.0125f                  // blend increment
         );
 
-    //std::cout << gsParticleData->MaxParticles << std::endl;
+    std::cout << gsParticleData->MaxParticles << std::endl;
     //std::cout << std::powf(3.0f/4.0f*config.FluidParticleMass[0]/config.RestDensity*1.0f/M_PI, 1.0f/3.0f) << std::endl;
-    //std::system("pause");
+    std::system("pause");
     
     
     // CREATE A SOLVER AND SET IT ACTIVE
@@ -258,14 +258,13 @@ void initSim ()
             gsParticleDataHigh, 
             WIDTH, 
             HEIGHT, 
-            0.010*1.2f
+            0.015*1.2f/2.0f
         );
 
-
-    gsVideoWriter = new VideoWriter("video.avi", WIDTH, HEIGHT);
+    gsVideoWriter = new VideoWriter("video_high.avi", WIDTH, HEIGHT);
     gsSSFRenderer->AddBox(
-            make_float3(0.66f,  -0.0f,  0.16f),
-            make_float3(0.79f, 1.5f, 0.29f)
+            make_float3(0.62f, -0.0f, 0.138f),
+            make_float3(0.83f, 1.5f, 0.332)
     );
 }
 //------------------------------------------------------------------------------

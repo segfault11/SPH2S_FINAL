@@ -170,6 +170,11 @@ void initSim ()
             0.0075f
         );
     gsParticleData = ParticleData::CreateParticleBox(particleGrid);
+    
+    
+    std::cout << gsParticleData->NumParticles << std::endl;
+    std::system("pause");
+
 
     // INIT BOUNDARY PARTICLES
     Grid boundaryGridA = Grid::MakeGrid(
